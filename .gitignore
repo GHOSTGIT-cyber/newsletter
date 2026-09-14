@@ -1,0 +1,21 @@
+# Clé API — jamais dans le dépôt.
+.env
+
+# Listes de contacts réelles — données personnelles, jamais dans le dépôt.
+contacts.csv
+contacts.txt
+contacts-*.csv
+contacts-*.txt
+*.contacts.csv
+
+# Newsletters de reference recues par mail.
+refs/*
+!refs/LISEZMOI.md
+
+# Journal des envois.
+.sent.log
+
+# Artefact de build, regenere a chaque publication.
+Dockerfile.generated
+
+node_modules/

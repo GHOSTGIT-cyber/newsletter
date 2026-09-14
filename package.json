@@ -1,0 +1,18 @@
+{
+  "name": "newsletter-liftfoils",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Maquettes newsletter Lift Foils France + envoi de test via Resend",
+  "scripts": {
+    "dry": "node --env-file-if-exists=.env send.js --dry",
+    "send": "node --env-file-if-exists=.env send.js",
+    "serve": "npx --yes serve .",
+    "publish:preview": "node --env-file-if-exists=.env publish.js",
+    "publish:dry": "node --env-file-if-exists=.env publish.js --dry",
+    "dns": "node --env-file-if-exists=.env verifier-dns.js"
+  },
+  "engines": {
+    "node": ">=20.18"
+  }
+}
