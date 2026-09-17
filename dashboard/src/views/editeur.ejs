@@ -1,0 +1,33 @@
+<%- include('_entete', { titre: n.nom, classe: 'editeur' }) %>
+<div class="barre-editeur">
+  <a href="/" class="retour">← Newsletters</a>
+  <form method="post" action="/newsletters/<%= n.id %>/renommer" class="renommer">
+    <input type="text" name="nom" value="<%= n.nom %>" aria-label="Nom de la newsletter" title="Nom interne, non visible par les destinataires. Entrée pour valider.">
+  </form>
+  <span class="gabarit-nom discret">Gabarit <%= g.cle %> · <%= g.nom %></span>
+  <span id="etat" class="etat" aria-live="polite"><%= lectureSeule ? 'Lecture seule' : 'Enregistré' %></span>
+  <div class="boutons">
+    <a href="/n/<%= n.id_public %>" target="_blank" class="bouton">Aperçu</a>
+    <form method="post" action="/newsletters/<%= n.id %>/dupliquer"><button class="bouton">Dupliquer</button></form>
+    <button class="bouton principal" disabled title="Disponible à l'étape envoi">M'envoyer un test</button>
+  </div>
+</div>
+
+<% if (lectureSeule) { %>
+<p class="bandeau-info">Cette newsletter a été envoyée<%= n.envoyee_le ? ' le ' + n.envoyee_le.slice(0, 10) : '' %> : elle n'est plus modifiable. Dupliquez-la pour la réutiliser.</p>
+<% } else { %>
+<p class="bandeau-info aide">Cliquez sur un texte pour le modifier, sur une image ou un bouton pour changer sa cible. Tout est enregistré automatiquement.</p>
+<% } %>
+
+<div class="entete-email">
+  <div class="ligne"><span class="etiquette">Objet</span>
+    <span class="champ" <%- lectureSeule ? '' : 'contenteditable="plaintext-only"' %> data-chemin="meta.objet" spellcheck="true"><%= n.contenu.meta?.objet || '' %></span></div>
+  <div class="ligne"><span class="etiquette">Aperçu</span>
+    <span class="champ" <%- lectureSeule ? '' : 'contenteditable="plaintext-only"' %> data-chemin="meta.preheader" spellcheck="true"><%= n.contenu.meta?.preheader || '' %></span>
+    <span class="discret info">texte affiché sous l'objet dans la boîte de réception</span></div>
+</div>
+
+<iframe id="cadre" src="/newsletters/<%= n.id %>/cadre" title="Aperçu modifiable de la newsletter" data-id="<%= n.id %>" data-lecture-seule="<%= lectureSeule ? '1' : '' %>"></iframe>
+
+<script src="/static/editeur.js"></script>
+<%- include('_pied') %>

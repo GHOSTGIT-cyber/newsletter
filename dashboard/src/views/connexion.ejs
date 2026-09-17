@@ -1,0 +1,11 @@
+<%- include('_entete', { titre: 'Connexion', classe: 'centre' }) %>
+<main class="carte etroite">
+  <h1>Newsletter Lift Foils France</h1>
+  <% if (erreur) { %><p class="alerte"><%= erreur %></p><% } %>
+  <form method="post" action="/connexion<%= typeof suite !== 'undefined' && suite ? '?suite=' + encodeURIComponent(suite) : '' %>">
+    <label>Email <input type="email" name="email" required autofocus autocomplete="username"></label>
+    <label>Mot de passe <input type="password" name="mdp" required autocomplete="current-password"></label>
+    <button type="submit" class="principal">Se connecter</button>
+  </form>
+</main>
+<%- include('_pied') %>

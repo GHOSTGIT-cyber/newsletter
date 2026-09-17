@@ -1,0 +1,7 @@
+<%- include('_entete', { titre: 'Erreur ' + code, classe: 'centre' }) %>
+<main class="carte etroite">
+  <h1><%= code === 200 ? 'Désabonnement' : 'Erreur ' + code %></h1>
+  <p><%= message %></p>
+  <% if (utilisateur) { %><p><a href="/">← Retour aux newsletters</a></p><% } %>
+</main>
+<%- include('_pied') %>

@@ -1,0 +1,42 @@
+<%- include('_entete', { titre: 'Newsletters' }) %>
+<main class="page">
+  <div class="entete-page">
+    <h1>Newsletters</h1>
+    <form method="post" action="/newsletters" class="en-ligne">
+      <select name="gabarit" required>
+        <% for (const [cle, g] of Object.entries(catalogue)) { %>
+          <option value="<%= cle %>"><%= cle %> · <%= g.nom %></option>
+        <% } %>
+      </select>
+      <input type="text" name="nom" placeholder="Nom de la newsletter (facultatif)">
+      <button type="submit" class="principal">Nouvelle newsletter</button>
+    </form>
+  </div>
+
+  <% if (newsletters.length === 0) { %>
+    <p class="vide">Aucune newsletter pour l'instant. Choisissez un gabarit ci-dessus pour en créer une.</p>
+  <% } else { %>
+  <table class="tableau">
+    <thead><tr><th>Nom</th><th>Objet</th><th>Gabarit</th><th>Statut</th><th>Modifiée</th><th></th></tr></thead>
+    <tbody>
+    <% for (const n of newsletters) { %>
+      <tr>
+        <td><a href="/newsletters/<%= n.id %>" class="fort"><%= n.nom %></a></td>
+        <td class="discret"><%= n.objet %></td>
+        <td class="discret"><%= n.gabaritNom %></td>
+        <td><span class="statut statut-<%= n.statut %>"><%= n.statut === 'brouillon' ? 'Brouillon' : n.statut === 'envoi' ? 'Envoi en cours' : 'Envoyée' %></span></td>
+        <td class="discret" title="<%= n.modifie_le %> UTC"><%= n.modifie_le.slice(0, 16).replace('T', ' ') %></td>
+        <td class="actions">
+          <a href="/n/<%= n.id_public %>" target="_blank">Aperçu</a>
+          <form method="post" action="/newsletters/<%= n.id %>/dupliquer"><button class="lien">Dupliquer</button></form>
+          <% if (n.statut === 'brouillon') { %>
+          <form method="post" action="/newsletters/<%= n.id %>/supprimer" onsubmit="return confirm('Supprimer cette newsletter ? Cette action est définitive.')"><button class="lien danger">Supprimer</button></form>
+          <% } %>
+        </td>
+      </tr>
+    <% } %>
+    </tbody>
+  </table>
+  <% } %>
+</main>
+<%- include('_pied') %>

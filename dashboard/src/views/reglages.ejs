@@ -1,0 +1,38 @@
+<%- include('_entete', { titre: 'Réglages' }) %>
+<main class="page etroite">
+  <h1>Réglages</h1>
+  <% if (message) { %><p class="succes"><%= message %></p><% } %>
+  <% if (erreur) { %><p class="alerte"><%= erreur %></p><% } %>
+
+  <section class="carte">
+    <h2>Expéditeur</h2>
+    <form method="post" action="/reglages">
+      <label>Adresse postale (pied de page des emails)
+        <input type="text" name="adresse_postale" value="<%= adresse_postale %>" placeholder="12 rue …, 06400 Cannes">
+      </label>
+      <label>Adresse pour « M'envoyer un test »
+        <input type="email" name="email_test" value="<%= email_test %>" placeholder="anna@…">
+      </label>
+      <button type="submit" class="principal">Enregistrer</button>
+    </form>
+  </section>
+
+  <% if (utilisateur.id !== 0) { %>
+  <section class="carte">
+    <h2>Mot de passe</h2>
+    <form method="post" action="/reglages/mot-de-passe">
+      <label>Mot de passe actuel <input type="password" name="actuel" required autocomplete="current-password"></label>
+      <label>Nouveau mot de passe <input type="password" name="nouveau" required minlength="8" autocomplete="new-password"></label>
+      <label>Confirmation <input type="password" name="confirmation" required minlength="8" autocomplete="new-password"></label>
+      <button type="submit">Changer le mot de passe</button>
+    </form>
+  </section>
+  <% } %>
+
+  <section class="carte">
+    <h2>Sauvegarde</h2>
+    <p class="discret">Télécharge une copie de la base (newsletters, contacts, journal des envois). À faire régulièrement : ce fichier contient les liens de désabonnement de tous les emails envoyés.</p>
+    <a href="/reglages/sauvegarde" class="bouton">Télécharger une sauvegarde</a>
+  </section>
+</main>
+<%- include('_pied') %>

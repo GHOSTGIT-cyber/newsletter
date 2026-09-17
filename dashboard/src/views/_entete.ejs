@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title><%= titre %> — Newsletter Lift Foils France</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="data:,">
+</head>
+<body class="<%= typeof classe !== 'undefined' ? classe : '' %>">
+<% if (utilisateur) { %>
+<header class="barre">
+  <a class="marque" href="/">Newsletter <span>Lift Foils France</span></a>
+  <nav>
+    <a href="/" class="<%= titre === 'Newsletters' ? 'actif' : '' %>">Newsletters</a>
+    <a href="/contacts" class="<%= titre === 'Contacts' ? 'actif' : '' %>">Contacts</a>
+    <a href="/reglages" class="<%= titre === 'Réglages' ? 'actif' : '' %>">Réglages</a>
+  </nav>
+  <% if (utilisateur.id !== 0) { %>
+  <form method="post" action="/deconnexion" class="deconnexion">
+    <span><%= utilisateur.email %></span>
+    <button type="submit" class="lien">Déconnexion</button>
+  </form>
+  <% } %>
+</header>
+<% } %>

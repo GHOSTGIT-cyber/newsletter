@@ -1,0 +1,27 @@
+{
+  "01": {
+    "fichier": "01-guide-taille.html",
+    "nom": "Guide de taille LIFT5",
+    "objet": "Quelle taille de LIFT5 est vraiment la vôtre ?"
+  },
+  "02": {
+    "fichier": "02-lancement.html",
+    "nom": "Lancement de la newsletter",
+    "objet": "On lance la newsletter Lift Foils France"
+  },
+  "03": {
+    "fichier": "03-course-frech.html",
+    "nom": "Événement (course, démo, salon)",
+    "objet": "La course arrive sur la Riviera — 13-15 septembre"
+  },
+  "04": {
+    "fichier": "04-sections-site.html",
+    "nom": "Visite du site, section par section",
+    "objet": "Le catalogue Lift, section par section"
+  },
+  "05": {
+    "fichier": "05-maintenance.html",
+    "nom": "Conseil technique (entretien, hivernage)",
+    "objet": "Ce que vous faites en septembre décide de votre mois de mai"
+  }
+}
