@@ -2,20 +2,27 @@
 <main class="page">
   <div class="entete-page">
     <h1>Newsletters</h1>
-    <form method="post" action="/newsletters" class="en-ligne">
-      <select name="gabarit" required>
-        <% for (const [cle, g] of Object.entries(catalogue)) { %>
-          <option value="<%= cle %>"><%= cle %> · <%= g.nom %></option>
-        <% } %>
-      </select>
-      <input type="text" name="nom" placeholder="Nom de la newsletter (facultatif)">
-      <button type="submit" class="principal">Nouvelle newsletter</button>
-    </form>
   </div>
 
+  <section class="gabarits">
+    <h2>Créer une newsletter à partir d'un gabarit</h2>
+    <div class="cartes">
+    <% for (const [cle, g] of Object.entries(catalogue)) { %>
+      <form method="post" action="/newsletters" class="carte-gabarit">
+        <input type="hidden" name="gabarit" value="<%= cle %>">
+        <span class="numero"><%= cle %></span>
+        <span class="nom"><%= g.nom %></span>
+        <span class="objet discret"><%= g.objet %></span>
+        <button type="submit" class="principal">Créer</button>
+      </form>
+    <% } %>
+    </div>
+  </section>
+
   <% if (newsletters.length === 0) { %>
-    <p class="vide">Aucune newsletter pour l'instant. Choisissez un gabarit ci-dessus pour en créer une.</p>
+    <p class="vide">Aucune newsletter pour l'instant. Cliquez sur « Créer » sous un gabarit ci-dessus.</p>
   <% } else { %>
+  <h2>Vos newsletters</h2>
   <table class="tableau">
     <thead><tr><th>Nom</th><th>Objet</th><th>Gabarit</th><th>Statut</th><th>Modifiée</th><th></th></tr></thead>
     <tbody>

@@ -51,6 +51,20 @@ body.editeur .barre { display: none; }
 .discret { color: var(--gris); }
 .fort { font-weight: 600; }
 
+/* ── Cartes de gabarits ──────────────────────────────────────────────── */
+.gabarits { margin-bottom: 32px; }
+.gabarits h2, .page > h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--gris); margin: 0 0 12px; }
+.cartes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.carte-gabarit {
+  display: flex; flex-direction: column; gap: 4px; margin: 0;
+  background: var(--blanc); border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  border-top: 3px solid var(--accent);
+}
+.carte-gabarit .numero { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .1em; }
+.carte-gabarit .nom { font-weight: 600; line-height: 1.3; }
+.carte-gabarit .objet { font-size: 13px; line-height: 1.4; flex: 1; }
+.carte-gabarit button { align-self: flex-start; margin-top: 10px; }
+
 /* ── Formulaires ─────────────────────────────────────────────────────── */
 label { display: block; margin-bottom: 14px; font-size: 13px; color: var(--gris); }
 input[type="text"], input[type="email"], input[type="password"], select {
