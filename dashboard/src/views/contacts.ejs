@@ -1,0 +1,94 @@
+<%- include('_entete', { titre: 'Contacts' }) %>
+<main class="page">
+  <div class="entete-page">
+    <h1>Contacts</h1>
+    <a href="/contacts/export" class="bouton">Exporter en CSV</a>
+  </div>
+
+  <% if (message) { %><p class="succes"><%= message %></p><% } %>
+  <% if (erreur) { %><p class="alerte"><%= erreur %></p><% } %>
+
+  <% if (rapport) { %>
+  <section class="carte">
+    <h2>Résultat de l'import</h2>
+    <p>
+      <strong><%= rapport.ajoutes %></strong> ajouté(s) ·
+      <strong><%= rapport.existants %></strong> déjà présent(s) ·
+      <strong><%= rapport.proteges %></strong> protégé(s) ·
+      <strong><%= rapport.invalides %></strong> invalide(s)
+    </p>
+    <% if (rapport.details.length) { %>
+      <p class="discret">Les contacts protégés sont ceux qui se sont désabonnés, ont rebondi ou se sont plaints : un import ne les réinscrit jamais.</p>
+      <ul class="liste-fine">
+        <% for (const d of rapport.details.slice(0, 40)) { %><li><%= d.email %> — <%= d.resultat %></li><% } %>
+        <% if (rapport.details.length > 40) { %><li class="discret">… et <%= rapport.details.length - 40 %> autre(s)</li><% } %>
+      </ul>
+    <% } %>
+  </section>
+  <% } %>
+
+  <div class="compteurs">
+    <a href="/contacts" class="compteur <%= filtre === '' ? 'actif' : '' %>"><span class="n"><%= comptes.total %></span> au total</a>
+    <a href="/contacts?statut=actif" class="compteur <%= filtre === 'actif' ? 'actif' : '' %>"><span class="n"><%= comptes.actif %></span> actifs</a>
+    <a href="/contacts?statut=desabonne" class="compteur <%= filtre === 'desabonne' ? 'actif' : '' %>"><span class="n"><%= comptes.desabonne %></span> désabonnés</a>
+    <a href="/contacts?statut=rebond" class="compteur <%= filtre === 'rebond' ? 'actif' : '' %>"><span class="n"><%= comptes.rebond %></span> rebonds</a>
+    <a href="/contacts?statut=plainte" class="compteur <%= filtre === 'plainte' ? 'actif' : '' %>"><span class="n"><%= comptes.plainte %></span> plaintes</a>
+  </div>
+
+  <div class="deux-colonnes">
+    <section class="carte">
+      <h2>Importer une liste</h2>
+      <form method="post" action="/contacts/import" enctype="multipart/form-data">
+        <label>Fichier CSV ou TXT
+          <input type="file" name="fichier" accept=".csv,.txt,text/csv,text/plain" required>
+        </label>
+        <label>D'où viennent ces contacts ? (consentement)
+          <input type="text" name="source" placeholder="ex. inscription site, clients 2025" required>
+        </label>
+        <label>Date du consentement
+          <input type="date" name="date" value="<%= new Date().toISOString().slice(0,10) %>">
+        </label>
+        <button type="submit" class="principal">Importer</button>
+      </form>
+      <p class="discret">Une adresse par ligne, ou un CSV avec une colonne <code>email</code>. Les colonnes <code>nom</code> et <code>prenom</code> sont reprises si elles existent.</p>
+    </section>
+
+    <section class="carte">
+      <h2>Ajouter un contact</h2>
+      <form method="post" action="/contacts">
+        <label>Adresse email <input type="email" name="email" required></label>
+        <label>Nom (facultatif) <input type="text" name="nom"></label>
+        <label>Origine du consentement <input type="text" name="source" placeholder="ex. demandé par téléphone"></label>
+        <button type="submit" class="principal">Ajouter</button>
+      </form>
+    </section>
+  </div>
+
+  <h2>Liste<%= filtre ? ' — ' + STATUTS[filtre].toLowerCase() + 's' : '' %></h2>
+  <% if (contacts.length === 0) { %>
+    <p class="vide">Aucun contact<%= filtre ? ' dans cette catégorie' : '' %>.</p>
+  <% } else { %>
+  <table class="tableau">
+    <thead><tr><th>Email</th><th>Nom</th><th>Statut</th><th>Depuis</th><th>Consentement</th><th></th></tr></thead>
+    <tbody>
+    <% for (const c of contacts) { %>
+      <tr>
+        <td class="fort"><%= c.email %></td>
+        <td class="discret"><%= c.nom || '—' %></td>
+        <td><span class="statut statut-<%= c.statut %>"><%= STATUTS[c.statut] %></span>
+          <% if (c.statut_origine) { %><span class="discret"> · <%= c.statut_origine %></span><% } %></td>
+        <td class="discret"><%= (c.statut_date || '').slice(0, 10) %></td>
+        <td class="discret"><%= c.consentement_source || '—' %><%= c.consentement_date ? ' · ' + c.consentement_date : '' %></td>
+        <td class="actions">
+          <% if (c.statut === 'actif') { %>
+          <form method="post" action="/contacts/<%= c.id %>/desabonner"><button class="lien">Désabonner</button></form>
+          <% } %>
+          <form method="post" action="/contacts/<%= c.id %>/supprimer" onsubmit="return confirm('Supprimer définitivement ce contact ? Son lien de désabonnement cessera de fonctionner. Pour le retirer de la liste, préférez « Désabonner ».')"><button class="lien danger">Supprimer</button></form>
+        </td>
+      </tr>
+    <% } %>
+    </tbody>
+  </table>
+  <% } %>
+</main>
+<%- include('_pied') %>

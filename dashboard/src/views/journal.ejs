@@ -1,0 +1,61 @@
+<%- include('_entete', { titre: 'Journal' }) %>
+<main class="page">
+  <div class="entete-page">
+    <div>
+      <h1><%= n.nom %></h1>
+      <p class="discret"><%= objet %> · gabarit <%= gabaritNom %><%= n.envoyee_le ? ' · envoyée le ' + n.envoyee_le.slice(0,10) : '' %></p>
+    </div>
+    <div class="en-ligne">
+      <a href="/n/<%= n.id_public %>" target="_blank" class="bouton">Aperçu</a>
+      <form method="post" action="/newsletters/<%= n.id %>/dupliquer"><button class="bouton">Dupliquer</button></form>
+    </div>
+  </div>
+
+  <div class="compteurs" id="compteurs">
+    <span class="compteur"><span class="n" data-p="total"><%= p.total %></span> au total</span>
+    <span class="compteur"><span class="n" data-p="livre"><%= p.livre %></span> livrés</span>
+    <span class="compteur"><span class="n" data-p="envoye"><%= p.envoye %></span> envoyés</span>
+    <span class="compteur"><span class="n" data-p="attente"><%= p.attente %></span> en attente</span>
+    <span class="compteur"><span class="n" data-p="echec"><%= p.echec %></span> en échec</span>
+  </div>
+
+  <% if (n.statut === 'envoi') { %>
+  <p class="bandeau-info" id="encours">Envoi en cours… <%= p.faits %> / <%= p.total %>. Le reste part automatiquement, y compris demain si le plafond du jour est atteint. Vous pouvez fermer cette page.</p>
+  <% } %>
+
+  <table class="tableau">
+    <thead><tr><th>Email</th><th>Nom</th><th>Envoi</th><th>Statut du contact</th><th>Date</th></tr></thead>
+    <tbody>
+    <% for (const e of envois) { %>
+      <tr>
+        <td class="fort"><%= e.email %></td>
+        <td class="discret"><%= e.nom || '—' %></td>
+        <td>
+          <% const lib = { attente:'En attente', envoye:'Envoyé', livre:'Livré', echec:'Échec' }[e.statut] %>
+          <span class="statut statut-<%= e.statut === 'livre' ? 'envoyee' : e.statut %>"><%= lib %></span>
+          <% if (e.erreur) { %><span class="discret"> · <%= e.erreur %></span><% } %>
+        </td>
+        <td><% if (e.statut_contact) { %><span class="discret"><%= STATUTS[e.statut_contact] %></span><% } else { %><span class="discret">supprimé</span><% } %></td>
+        <td class="discret"><%= (e.envoye_le || '').slice(0, 16).replace('T',' ') %></td>
+      </tr>
+    <% } %>
+    </tbody>
+  </table>
+
+  <% if (n.statut === 'envoi') { %>
+  <script>
+    // Tant que l'envoi tourne, on rafraîchit les compteurs toutes les deux secondes.
+    const rafraichir = async () => {
+      const r = await fetch('/api/newsletters/<%= n.id %>/progression');
+      if (!r.ok) return;
+      const p = await r.json();
+      for (const el of document.querySelectorAll('[data-p]')) el.textContent = p[el.dataset.p];
+      const info = document.getElementById('encours');
+      if (info) info.firstChild.textContent = `Envoi en cours… ${p.faits} / ${p.total}. `;
+      if (p.statut !== 'envoi') location.reload();
+    };
+    setInterval(rafraichir, 2000);
+  </script>
+  <% } %>
+</main>
+<%- include('_pied') %>

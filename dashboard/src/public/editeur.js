@@ -68,6 +68,33 @@
     else if (m.type === "modif") planifier(m.chemin, m.valeur);
   });
 
+  // ── Bouton « M'envoyer un test » ─────────────────────────────────────────
+  const btest = document.getElementById("btest");
+  if (btest) {
+    btest.addEventListener("click", async () => {
+      // On laisse d'abord partir ce qui n'est pas encore enregistré.
+      for (const chemin of [...enAttente.keys()]) await envoyer(chemin);
+      const libelle = btest.textContent;
+      btest.disabled = true;
+      btest.textContent = "Envoi…";
+      try {
+        const rep = await fetch(`/newsletters/${id}/test`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        const j = await rep.json().catch(() => ({}));
+        if (!rep.ok) throw new Error(j.erreur || `HTTP ${rep.status}`);
+        afficher(`Test envoyé à ${j.destinataire}`, "ok");
+      } catch (e) {
+        afficher(`Test non envoyé : ${e.message}`, "erreur");
+      } finally {
+        btest.disabled = false;
+        btest.textContent = libelle;
+      }
+    });
+  }
+
   // ── Objet et préheader, hors iframe ──────────────────────────────────────
   document.querySelectorAll(".champ[contenteditable]").forEach((el) => {
     el.addEventListener("keydown", (e) => {

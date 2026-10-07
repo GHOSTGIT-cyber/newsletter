@@ -102,6 +102,30 @@ button.lien.danger { color: var(--danger); }
 .statut-envoi { background: #fff4d6; color: #8a6d00; }
 .statut-envoyee { background: #e6f4ea; color: var(--ok); }
 
+/* ── Compteurs, listes, récapitulatif ────────────────────────────────── */
+.compteurs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+.compteur {
+  background: var(--blanc); border-radius: 8px; padding: 12px 18px; text-decoration: none;
+  color: var(--gris); font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 2px solid transparent;
+}
+a.compteur:hover { border-color: #ddd; }
+a.compteur.actif { border-color: var(--accent); color: var(--encre); }
+.compteur .n { display: block; font-size: 22px; font-weight: 700; color: var(--encre); line-height: 1.2; }
+.deux-colonnes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.liste-fine { margin: 0; padding-left: 20px; color: var(--gris); font-size: 14px; line-height: 1.7; }
+.liste-fine .alerte-ligne { color: var(--danger); }
+.recap { display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; margin: 0; }
+.recap dt { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--gris); }
+.recap dd { margin: 0; }
+button.grand { padding: 12px 24px; font-size: 15px; }
+input[type="file"], input[type="date"] { display: block; width: 100%; margin-top: 4px; font: inherit; padding: 7px 10px; border: 1px solid #ccc; border-radius: 5px; background: var(--blanc); }
+code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+.statut-actif { background: #e6f4ea; color: var(--ok); }
+.statut-desabonne { background: #eee; color: var(--gris); }
+.statut-rebond, .statut-plainte { background: #fdecea; color: var(--danger); }
+.statut-attente { background: #fff4d6; color: #8a6d00; }
+.statut-echec { background: #fdecea; color: var(--danger); }
+
 /* ── Éditeur ─────────────────────────────────────────────────────────── */
 body.editeur { background: var(--gris-clair); }
 .barre-editeur {

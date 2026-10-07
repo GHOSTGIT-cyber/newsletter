@@ -1,0 +1,53 @@
+<%- include('_entete', { titre: 'Envoyer' }) %>
+<main class="page etroite">
+  <p><a href="/newsletters/<%= n.id %>">← Retour à l'éditeur</a></p>
+  <h1>Envoyer « <%= n.nom %> »</h1>
+  <% if (erreur) { %><p class="alerte"><%= erreur %></p><% } %>
+
+  <section class="carte">
+    <h2>Ce qui va partir</h2>
+    <dl class="recap">
+      <dt>Objet</dt><dd class="fort"><%= objet %></dd>
+      <dt>Destinataires</dt><dd class="fort"><%= comptes.actif %> contact<%= comptes.actif > 1 ? 's' : '' %> actif<%= comptes.actif > 1 ? 's' : '' %></dd>
+      <dt>Exclus</dt><dd class="discret"><%= comptes.desabonne %> désabonné(s), <%= comptes.rebond %> rebond(s), <%= comptes.plainte %> plainte(s)</dd>
+      <dt>Aujourd'hui</dt><dd>
+        <% if (comptes.actif <= budget) { %>
+          les <%= comptes.actif %> partent aujourd'hui
+        <% } else { %>
+          <%= budget %> aujourd'hui, les <%= comptes.actif - budget %> restants demain
+          <span class="discret">(plafond de <%= plafond %>/jour)</span>
+        <% } %>
+      </dd>
+    </dl>
+  </section>
+
+  <% const bloquants = [];
+     if (!configure) bloquants.push("La clé Resend n'est pas configurée sur le serveur.");
+     if (comptes.actif === 0) bloquants.push("Aucun contact actif : importez une liste dans Contacts.");
+     if (!adressePostale) bloquants.push("L'adresse postale n'est pas renseignée dans Réglages — elle est obligatoire dans le pied de page.");
+  %>
+
+  <% if (bloquants.length) { %>
+    <section class="carte">
+      <h2>À régler avant d'envoyer</h2>
+      <ul class="liste-fine">
+        <% for (const b of bloquants) { %><li class="alerte-ligne"><%= b %></li><% } %>
+      </ul>
+    </section>
+  <% } else { %>
+    <section class="carte">
+      <h2>Vérifications</h2>
+      <ul class="liste-fine">
+        <li>Avez-vous relu le texte et l'objet ?</li>
+        <li>Avez-vous reçu un test sur votre propre boîte<%= emailTest ? ' (' + emailTest + ')' : '' %> ?</li>
+        <li>Une fois partie, la newsletter passe en lecture seule et ne peut plus être corrigée.</li>
+      </ul>
+      <form method="post" action="/newsletters/<%= n.id %>/envoyer"
+            onsubmit="return confirm('Envoyer à <%= comptes.actif %> destinataire<%= comptes.actif > 1 ? 's' : '' %> ? Cette action est irréversible.')">
+        <input type="hidden" name="confirmation" value="<%= comptes.actif %>">
+        <button type="submit" class="principal grand">Envoyer à <%= comptes.actif %> destinataire<%= comptes.actif > 1 ? 's' : '' %></button>
+      </form>
+    </section>
+  <% } %>
+</main>
+<%- include('_pied') %>

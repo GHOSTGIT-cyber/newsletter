@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Désabonnement — Lift Foils France</title>
+<link rel="icon" href="data:,">
+<style>
+  body { margin:0; font:16px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#111;
+         background:#e8e8e8; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+  .carte { background:#fff; max-width:460px; width:100%; padding:36px 32px; border-radius:8px; text-align:center;
+           box-shadow:0 2px 12px rgba(0,0,0,.1); }
+  .logo { display:block; width:110px; height:auto; margin:0 auto 24px; }
+  h1 { font-size:21px; margin:0 0 14px; }
+  p { margin:0 0 18px; color:#4a4a4a; }
+  .email { font-weight:600; color:#111; word-break:break-all; }
+  button { font:inherit; font-weight:600; cursor:pointer; background:#1cc4bf; color:#000; border:0;
+           border-radius:30px; padding:14px 34px; }
+  button:hover { filter:brightness(.95); }
+  .pied { margin:22px 0 0; font-size:13px; color:#8a8a8a; }
+  .pied a { color:#6a6a6a; }
+</style>
+</head>
+<body>
+<main class="carte">
+  <img class="logo" src="https://liftfoils.fr/wp-content/uploads/2022/01/LIFT_retailer_white.png" alt="Lift Foils France" style="filter:invert(1);">
+
+  <% if (etat === 'confirmer') { %>
+    <h1>Se désabonner</h1>
+    <p>Vous ne recevrez plus la newsletter de Lift Foils France à l'adresse <span class="email"><%= contact.email %></span>.</p>
+    <form method="post" action="/desabonnement/<%= jeton %>">
+      <button type="submit">Confirmer le désabonnement</button>
+    </form>
+  <% } else if (etat === 'fait') { %>
+    <h1>C'est fait</h1>
+    <p>L'adresse <span class="email"><%= contact ? contact.email : '' %></span> ne recevra plus rien de notre part.</p>
+    <p>Si c'était une erreur, écrivez-nous&nbsp;: <!--email_off--><a href="mailto:info@liftfoils.fr">info@liftfoils.fr</a><!--email_on--></p>
+  <% } else if (etat === 'deja') { %>
+    <h1>Déjà désabonné</h1>
+    <p>L'adresse <span class="email"><%= contact.email %></span> ne reçoit plus notre newsletter.</p>
+  <% } else if (etat === 'inconnu') { %>
+    <h1>Lien non valable</h1>
+    <p>Ce lien de désabonnement n'est pas reconnu. Il a peut-être déjà été utilisé.</p>
+    <p>Écrivez-nous et nous le ferons&nbsp;: <!--email_off--><a href="mailto:info@liftfoils.fr">info@liftfoils.fr</a><!--email_on--></p>
+  <% } else { %>
+    <h1>Désabonnement</h1>
+    <p>Pour vous désabonner, utilisez le lien « Se désabonner » en bas de l'email que vous avez reçu&nbsp;: il est propre à votre adresse.</p>
+    <p>Sinon, écrivez-nous&nbsp;: <!--email_off--><a href="mailto:info@liftfoils.fr">info@liftfoils.fr</a><!--email_on--></p>
+  <% } %>
+
+  <p class="pied">Lift Foils France &nbsp;·&nbsp; <a href="https://liftfoils.fr/">liftfoils.fr</a></p>
+</main>
+</body>
+</html>

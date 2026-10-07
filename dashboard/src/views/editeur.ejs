@@ -9,7 +9,12 @@
   <div class="boutons">
     <a href="/n/<%= n.id_public %>" target="_blank" class="bouton">Aperçu</a>
     <form method="post" action="/newsletters/<%= n.id %>/dupliquer"><button class="bouton">Dupliquer</button></form>
-    <button class="bouton principal" disabled title="Disponible à l'étape envoi">M'envoyer un test</button>
+    <% if (lectureSeule) { %>
+      <a href="/newsletters/<%= n.id %>/journal" class="bouton">Journal</a>
+    <% } else { %>
+      <button type="button" class="bouton" id="btest">M'envoyer un test</button>
+      <a href="/newsletters/<%= n.id %>/envoyer" class="bouton principal">Envoyer…</a>
+    <% } %>
   </div>
 </div>
 

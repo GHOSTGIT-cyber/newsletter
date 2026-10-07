@@ -14,6 +14,9 @@ import routesNewsletters from "./routes/newsletters.js";
 import routesPublic from "./routes/public.js";
 import routesReglages from "./routes/reglages.js";
 import routesMedias from "./routes/medias.js";
+import routesContacts from "./routes/contacts.js";
+import routesEnvoi from "./routes/envoi.js";
+import { demarrerBoucle } from "./envoi.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -24,7 +27,9 @@ app.set("trust proxy", 1); // derrière Traefik (Coolify)
 app.disable("x-powered-by");
 
 app.use(express.urlencoded({ extended: false, limit: "2mb" }));
-app.use(express.json({ limit: "1mb" }));
+// Le webhook Resend signe le corps brut : il faut le garder tel quel pour
+// pouvoir vérifier la signature.
+app.use(express.json({ limit: "1mb", verify: (req, _res, buf) => { req.rawBody = buf; } }));
 app.use(cookieParser());
 app.use("/static", express.static(resolve(__dirname, "public"), { maxAge: "1h" }));
 
@@ -42,11 +47,8 @@ app.use(exigerConnexion);
 app.use(routesNewsletters);
 app.use(routesReglages);
 app.use(routesMedias);
-
-// Étape 3 : les contacts. En attendant, une page qui le dit.
-app.get("/contacts", (req, res) =>
-  res.render("erreur", { code: 200, message: "La gestion des contacts arrive à l'étape suivante." })
-);
+app.use(routesContacts);
+app.use(routesEnvoi);
 
 app.use((req, res) => res.status(404).render("erreur", { code: 404, message: "Page introuvable" }));
 app.use((err, req, res, next) => {
@@ -56,6 +58,7 @@ app.use((err, req, res, next) => {
 });
 
 initialiserComptes();
+demarrerBoucle();
 
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => console.log(`Dashboard newsletter : http://localhost:${port}`));

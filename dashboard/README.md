@@ -3,8 +3,9 @@
 Outil d'administration des newsletters : édition du texte directement dans
 l'aperçu, contacts, envoi via Resend, désabonnement en un clic.
 
-État : **étape 2 — éditeur sur les cinq gabarits**. Contacts, envoi et
-désabonnement viennent ensuite (voir `PLAN.md`).
+État : **étape 4 — l'envoi fonctionne**. Éditeur, contacts, désabonnement en
+un clic, envoi à la liste et journal sont en place. Reste à activer le webhook
+Resend une fois l'URL publique stable (voir `PLAN.md`).
 
 ## Lancer en local
 
@@ -65,7 +66,34 @@ node --no-warnings=ExperimentalWarning -e "import('./src/gabarits.js').then(m =>
 | `PORT` | 3000 par défaut |
 | `DB_PATH` | fichier SQLite ; en production `/data/newsletter.sqlite` |
 | `COMPTES_INITIAUX` | `email:motdepasse,email:motdepasse`, lu si aucun compte n'existe |
-| `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `MAIL_FROM`, `DAILY_LIMIT` | envoi (étape 4) |
+| `RESEND_API_KEY` | clé API Resend — sans elle, les envois restent en attente |
+| `MAIL_FROM` | expéditeur, ex. `Lift Foils France <news@news.liftfoils.fr>` |
+| `DAILY_LIMIT` | plafond quotidien, 90 par défaut (plan gratuit Resend : 100) |
+| `RESEND_WEBHOOK_SECRET` | signature du webhook rebonds / plaintes |
+| `SANS_CONNEXION` | `1` supprime la page de connexion. **Développement local uniquement** : la base contient des données personnelles |
+
+## L'envoi
+
+- Un email par destinataire : personne ne voit l'adresse des autres.
+- Plafond quotidien (`DAILY_LIMIT`, 90 par défaut) commun à toutes les
+  newsletters. Au-delà, le reste part le lendemain tout seul — une boucle
+  reprend la file toutes les minutes, y compris après un redémarrage.
+- Chaque email porte `List-Unsubscribe` et `List-Unsubscribe-Post`, plus une
+  version texte générée depuis le contenu.
+- Juste avant d'envoyer, le statut du contact est revérifié : quelqu'un qui
+  s'est désabonné pendant la campagne ne reçoit rien.
+- Une newsletter envoyée passe en lecture seule.
+
+## Le désabonnement
+
+`GET /desabonnement/:jeton` affiche une page avec un bouton,
+`POST /desabonnement/:jeton` désabonne sans confirmation — c'est ce que Gmail
+appelle. Le jeton fait 256 bits, il est propre à chaque contact et stocké en
+base : **il doit rester valable pour toujours**, un email envoyé aujourd'hui
+doit encore pouvoir désabonner dans deux ans. D'où l'importance des sauvegardes.
+
+Un contact désabonné, en rebond ou en plainte n'est **jamais** réactivé par un
+import ultérieur. C'est la règle la plus importante du dashboard.
 
 ## Sauvegarde et restauration
 
