@@ -70,10 +70,14 @@ async function appelerResend(message) {
   return { ok: false, erreur: "échec après 3 tentatives" };
 }
 
-/** Envoi immédiat à une adresse, sans passer par la file (bouton « test »). */
-export async function envoyerTest(n, destinataire, publicUrl) {
+/**
+ * Envoi immédiat à une adresse, sans passer par la file (bouton « test »).
+ * Si `contact` est fourni, l'email est identique à celui que recevra la liste,
+ * lien de désabonnement personnel compris — l'objet reste préfixé [TEST].
+ */
+export async function envoyerTest(n, destinataire, publicUrl, contact = null) {
   if (!configure()) return { ok: false, erreur: "RESEND_API_KEY n'est pas définie sur le serveur." };
-  const message = preparerEmail(n, { test: true, publicUrl });
+  const message = preparerEmail(n, { test: true, contact, publicUrl });
   return appelerResend({ to: [destinataire], ...message });
 }
 

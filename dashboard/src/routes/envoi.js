@@ -5,7 +5,7 @@
 import { Router } from "express";
 import { db, reglage } from "../db.js";
 import { CATALOGUE } from "../gabarits.js";
-import { STATUTS, compteParStatut } from "../contacts.js";
+import { STATUTS, compteParStatut, parEmail } from "../contacts.js";
 import { envoyerTest, preparerCampagne, progression, tick, budgetDuJour, plafondQuotidien, configure } from "../envoi.js";
 
 const r = Router();
@@ -21,7 +21,10 @@ r.post("/newsletters/:id/test", async (req, res) => {
   if (!destinataire) {
     return res.status(400).json({ erreur: "Renseignez l'adresse de test dans Réglages." });
   }
-  const resultat = await envoyerTest(n, destinataire, req.app.locals.PUBLIC_URL);
+  // Si l'adresse de test est dans les contacts, le test porte son vrai lien de
+  // désabonnement : c'est exactement l'email que recevra la liste.
+  const contact = parEmail(destinataire);
+  const resultat = await envoyerTest(n, destinataire, req.app.locals.PUBLIC_URL, contact);
   if (!resultat.ok) return res.status(502).json({ erreur: resultat.erreur });
   res.json({ ok: true, destinataire });
 });
