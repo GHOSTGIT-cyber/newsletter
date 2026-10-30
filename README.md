@@ -1,3 +1,15 @@
+<p align="center">
+  <img src=".github/readme/banner.svg" alt="Newsletter Lift Foils" width="100%">
+</p>
+
+> Trois maquettes d'email prêtes à faire valider, avec l'envoi via Resend et la mise en ligne de la preview.
+
+![HTML EMAIL](https://img.shields.io/badge/HTML_EMAIL-0B1A2A?style=flat-square&labelColor=0B1A2A&color=1E3A52) ![NODE.JS](https://img.shields.io/badge/NODE.JS-0B1A2A?style=flat-square&labelColor=0B1A2A&color=1E3A52) ![RESEND](https://img.shields.io/badge/RESEND-0B1A2A?style=flat-square&labelColor=0B1A2A&color=1E3A52) ![COOLIFY](https://img.shields.io/badge/COOLIFY-0B1A2A?style=flat-square&labelColor=0B1A2A&color=1E3A52)
+
+**Statut** — 🟠 Maquettes en attente de validation
+
+---
+
 # Maquettes newsletter — Lift Foils France
 
 Trois maquettes d'email prêtes à faire valider, plus de quoi les publier et les
