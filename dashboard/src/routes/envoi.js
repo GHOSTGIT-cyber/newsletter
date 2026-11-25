@@ -4,7 +4,7 @@
  */
 import { Router } from "express";
 import { db, reglage } from "../db.js";
-import { CATALOGUE } from "../gabarits.js";
+import { nomGabarit } from "../gabarits.js";
 import { STATUTS, compteParStatut, parEmail } from "../contacts.js";
 import { envoyerTest, preparerCampagne, progression, tick, budgetDuJour, plafondQuotidien, configure } from "../envoi.js";
 
@@ -90,7 +90,7 @@ r.get("/newsletters/:id/journal", (req, res) => {
   res.render("journal", {
     n,
     objet: JSON.parse(n.contenu).meta?.objet || "",
-    gabaritNom: CATALOGUE[n.gabarit]?.nom || n.gabarit,
+    gabaritNom: nomGabarit(n.gabarit),
     envois,
     p: progression(n.id),
     STATUTS,

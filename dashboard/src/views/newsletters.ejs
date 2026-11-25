@@ -5,6 +5,23 @@
   </div>
 
   <section class="gabarits">
+    <h2>Créer une mise en page libre</h2>
+    <p class="discret sous-titre">Vous composez la newsletter bloc par bloc : bannières, textes, images, produits, colonnes, code promo… Ajoutez, déplacez et supprimez les sections comme vous voulez.</p>
+    <div class="cartes">
+    <% for (const m of modeles) { %>
+      <form method="post" action="/newsletters" class="carte-gabarit libre">
+        <input type="hidden" name="gabarit" value="libre">
+        <input type="hidden" name="modele" value="<%= m.cle %>">
+        <span class="numero">Blocs</span>
+        <span class="nom"><%= m.nom %></span>
+        <span class="objet discret"><%= m.description %></span>
+        <button type="submit" class="principal">Créer</button>
+      </form>
+    <% } %>
+    </div>
+  </section>
+
+  <section class="gabarits">
     <h2>Créer une newsletter à partir d'un gabarit</h2>
     <div class="cartes">
     <% for (const [cle, g] of Object.entries(catalogue)) { %>

@@ -1,0 +1,85 @@
+<%- include('_entete', { titre: n.nom, classe: 'editeur' }) %>
+<div class="barre-editeur">
+  <a href="/" class="retour">← Newsletters</a>
+  <form method="post" action="/newsletters/<%= n.id %>/renommer" class="renommer">
+    <input type="text" name="nom" value="<%= n.nom %>" aria-label="Nom de la newsletter" title="Nom interne, non visible par les destinataires. Entrée pour valider.">
+  </form>
+  <span class="gabarit-nom discret"><%= g.nom %></span>
+  <span id="etat" class="etat" aria-live="polite"><%= lectureSeule ? 'Lecture seule' : 'Enregistré' %></span>
+  <div class="boutons">
+    <a href="/n/<%= n.id_public %>" target="_blank" class="bouton">Aperçu</a>
+    <form method="post" action="/newsletters/<%= n.id %>/dupliquer"><button class="bouton">Dupliquer</button></form>
+    <% if (lectureSeule) { %>
+      <a href="/newsletters/<%= n.id %>/journal" class="bouton">Journal</a>
+    <% } else { %>
+      <button type="button" class="bouton" id="btest">M'envoyer un test</button>
+      <a href="/newsletters/<%= n.id %>/envoyer" class="bouton principal">Envoyer…</a>
+    <% } %>
+  </div>
+</div>
+
+<% if (lectureSeule) { %>
+<p class="bandeau-info">Cette newsletter a été envoyée<%= n.envoyee_le ? ' le ' + n.envoyee_le.slice(0, 10) : '' %> : elle n'est plus modifiable. Dupliquez-la pour la réutiliser.</p>
+<% } %>
+
+<div class="editeur-libre <%= lectureSeule ? 'lecture-seule' : '' %>">
+  <% if (!lectureSeule) { %>
+  <aside class="panneau" aria-label="Blocs de la newsletter">
+    <div class="panneau-entete">
+      <h2>Blocs</h2>
+      <span class="discret">Cliquez sur un bloc, ici ou dans l'aperçu, pour le modifier. Glissez ⠿ pour le déplacer.</span>
+    </div>
+    <div id="liste-blocs"></div>
+    <div id="annulation" class="annulation" hidden>
+      <span>Bloc supprimé.</span>
+      <button type="button" class="lien" id="bannuler">Annuler</button>
+    </div>
+  </aside>
+  <% } %>
+
+  <section class="apercu-libre">
+    <div class="entete-email">
+      <div class="ligne"><span class="etiquette">Objet</span>
+        <span class="champ" <%- lectureSeule ? '' : 'contenteditable="plaintext-only"' %> data-chemin="meta.objet" spellcheck="true" data-vide="Objet de l'email"><%= n.contenu.meta?.objet || '' %></span></div>
+      <div class="ligne"><span class="etiquette">Aperçu</span>
+        <span class="champ" <%- lectureSeule ? '' : 'contenteditable="plaintext-only"' %> data-chemin="meta.preheader" spellcheck="true" data-vide="Texte affiché sous l'objet"><%= n.contenu.meta?.preheader || '' %></span>
+        <span class="discret info">texte affiché sous l'objet dans la boîte de réception</span></div>
+    </div>
+    <iframe id="cadre" title="Aperçu de la newsletter"></iframe>
+  </section>
+</div>
+
+<dialog id="choix-image" class="choix-image">
+  <form method="dialog" class="ci-entete">
+    <strong>Choisir une image</strong>
+    <button value="annuler" class="lien" aria-label="Fermer">Fermer ✕</button>
+  </form>
+  <div class="ci-onglets" role="tablist">
+    <button type="button" role="tab" data-onglet="mediatheque" class="actif">Médiathèque liftfoils.fr</button>
+    <button type="button" role="tab" data-onglet="ordinateur">Depuis mon ordinateur</button>
+    <button type="button" role="tab" data-onglet="adresse">Adresse web</button>
+  </div>
+  <div class="ci-volet" data-volet="mediatheque">
+    <input type="text" id="ci-recherche" placeholder="Rechercher… (vide = les plus récentes)" autocomplete="off">
+    <div id="ci-grille" class="ci-grille"></div>
+    <div id="ci-pagination" class="ci-pagination"></div>
+  </div>
+  <div class="ci-volet" data-volet="ordinateur" hidden>
+    <label class="ci-depot" id="ci-depot">
+      <input type="file" id="ci-fichier" accept="image/jpeg,image/png,image/gif,image/webp">
+      <span class="fort">Cliquez pour choisir une image</span>
+      <span class="discret">ou glissez-la ici. JPEG, PNG, GIF ou WebP. Les grandes photos sont réduites automatiquement.</span>
+    </label>
+    <p id="ci-etat-envoi" class="discret" aria-live="polite"></p>
+  </div>
+  <div class="ci-volet" data-volet="adresse" hidden>
+    <label>Adresse de l'image (https://…)
+      <input type="text" id="ci-url" placeholder="https://liftfoils.fr/wp-content/uploads/…">
+    </label>
+    <button type="button" class="principal" id="ci-utiliser">Utiliser cette image</button>
+  </div>
+</dialog>
+
+<script type="application/json" id="donnees"><%- JSON.stringify({ id: n.id, lectureSeule, blocs: n.contenu.blocs || [], schema }).replace(/</g, '\\u003c') %></script>
+<script src="/static/blocs-editeur.js"></script>
+<%- include('_pied') %>

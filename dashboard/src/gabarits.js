@@ -19,6 +19,8 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { rendreLibre, texteLibre, contenuModele } from "./blocs.js";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIR = resolve(__dirname, "../gabarits");
 
@@ -28,8 +30,18 @@ export const CATALOGUE = JSON.parse(readFileSync(resolve(DIR, "catalogue.json"),
 
 const cache = new Map();
 
+/**
+ * Mise en page libre (voir blocs.js) : pas de fichier HTML, la newsletter est
+ * une liste de blocs. Elle passe par les mêmes fonctions rendre / versionTexte.
+ */
+export const LIBRE = "libre";
+const GABARIT_LIBRE = { cle: LIBRE, nom: "Mise en page libre", objet: "", libre: true, zones: [], get defaut() { return contenuModele("vierge"); } };
+
+export const nomGabarit = (cle) => (cle === LIBRE ? GABARIT_LIBRE.nom : CATALOGUE[cle]?.nom || cle);
+
 /** Charge un gabarit (HTML + zones + contenu par défaut), avec cache. */
 export function gabarit(cle) {
+  if (cle === LIBRE) return GABARIT_LIBRE;
   if (!CATALOGUE[cle]) throw new Error(`Gabarit inconnu : ${cle}`);
   if (!cache.has(cle)) {
     const html = readFileSync(resolve(DIR, CATALOGUE[cle].fichier), "utf-8");
@@ -160,6 +172,7 @@ export function extraire(html) {
 /** Les chemins qu'un PATCH a le droit de modifier. */
 export function cheminsAutorises(g) {
   const s = new Set(["meta.objet"]);
+  if (g.libre) s.add("meta.preheader");
   for (const z of g.zones) {
     if (z.type === "image") {
       s.add(`${z.chemin}.src`);
@@ -179,6 +192,7 @@ export function cheminsAutorises(g) {
  *   mode "email"  : ce qui part chez un destinataire
  */
 export function rendre(g, contenu, options = {}) {
+  if (g.libre) return rendreLibre(contenu, options);
   const { mode = "apercu", previewUrl = "#", unsubscribeUrl = "#", adressePostale = "" } = options;
   const valeur = (chemin, secours = "") => {
     const v = lire(contenu, chemin);
@@ -219,6 +233,7 @@ export function rendre(g, contenu, options = {}) {
 
 /** Version texte de l'email, dans l'ordre de lecture. */
 export function versionTexte(g, contenu, { previewUrl = "", unsubscribeUrl = "" } = {}) {
+  if (g.libre) return texteLibre(contenu, { previewUrl, unsubscribeUrl });
   const lignes = [];
   for (const z of g.zones) {
     if (z.chemin.startsWith("meta.")) continue;

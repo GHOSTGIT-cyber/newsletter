@@ -13,7 +13,7 @@ import routesAuth from "./routes/auth.js";
 import routesNewsletters from "./routes/newsletters.js";
 import routesPublic from "./routes/public.js";
 import routesReglages from "./routes/reglages.js";
-import routesMedias from "./routes/medias.js";
+import routesMedias, { DOSSIER_MEDIAS } from "./routes/medias.js";
 import routesContacts from "./routes/contacts.js";
 import routesEnvoi from "./routes/envoi.js";
 import { demarrerBoucle } from "./envoi.js";
@@ -39,6 +39,18 @@ app.use(verifierOrigine);
 app.locals.PUBLIC_URL = (process.env.PUBLIC_URL || "http://localhost:3000").replace(/\/$/, "");
 
 // Public
+// Images téléversées : chargées par les clients mail des destinataires. Le nom
+// de fichier est aléatoire et ne change jamais, d'où le cache long.
+app.use(
+  "/m",
+  express.static(DOSSIER_MEDIAS, {
+    index: false,
+    dotfiles: "deny",
+    immutable: true,
+    maxAge: "365d",
+    setHeaders: (res) => res.set("X-Content-Type-Options", "nosniff"),
+  })
+);
 app.use(routesAuth);
 app.use(routesPublic);
 

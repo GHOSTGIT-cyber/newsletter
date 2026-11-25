@@ -5,7 +5,8 @@
 import { Router } from "express";
 import { randomBytes } from "node:crypto";
 import { db, reglage } from "../db.js";
-import { CATALOGUE, gabarit, rendre, lire, ecrire, cheminsAutorises } from "../gabarits.js";
+import { CATALOGUE, LIBRE, nomGabarit, gabarit, rendre, lire, ecrire, cheminsAutorises } from "../gabarits.js";
+import { TYPES, COULEURS, MODELES, MAX_BLOCS, contenuModele, nettoyerBlocs } from "../blocs.js";
 
 const r = Router();
 
@@ -30,12 +31,20 @@ r.get("/", (req, res) => {
   const newsletters = db
     .prepare("SELECT id, id_public, gabarit, nom, statut, modifie_le, envoyee_le, contenu FROM newsletters ORDER BY modifie_le DESC")
     .all()
-    .map((n) => ({ ...n, objet: JSON.parse(n.contenu).meta?.objet || "", gabaritNom: CATALOGUE[n.gabarit]?.nom || n.gabarit }));
-  res.render("newsletters", { newsletters, catalogue: CATALOGUE });
+    .map((n) => ({ ...n, objet: JSON.parse(n.contenu).meta?.objet || "", gabaritNom: nomGabarit(n.gabarit) }));
+  const modeles = Object.entries(MODELES).map(([cle, m]) => ({ cle, nom: m.nom, description: m.description }));
+  res.render("newsletters", { newsletters, catalogue: CATALOGUE, modeles });
 });
 
 r.post("/newsletters", (req, res) => {
   const cle = String(req.body.gabarit || "");
+  if (cle === LIBRE) {
+    const modele = MODELES[req.body.modele] ? String(req.body.modele) : "vierge";
+    const info = db
+      .prepare("INSERT INTO newsletters (id_public, gabarit, nom, contenu) VALUES (?, ?, ?, ?)")
+      .run(idPublic(), LIBRE, MODELES[modele].nom, JSON.stringify(contenuModele(modele)));
+    return res.redirect(`/newsletters/${info.lastInsertRowid}`);
+  }
   if (!CATALOGUE[cle]) return res.status(400).render("erreur", { code: 400, message: "Gabarit inconnu." });
   const g = gabarit(cle);
   const nom = String(req.body.nom || "").trim() || g.nom;
@@ -69,7 +78,12 @@ r.post("/newsletters/:id/supprimer", (req, res) => {
 r.get("/newsletters/:id", (req, res) => {
   const n = charger(req.params.id);
   if (!n) return res.status(404).render("erreur", { code: 404, message: "Newsletter introuvable." });
-  res.render("editeur", { n, g: gabarit(n.gabarit), lectureSeule: n.statut !== "brouillon" });
+  const g = gabarit(n.gabarit);
+  const lectureSeule = n.statut !== "brouillon";
+  if (g.libre) {
+    return res.render("editeur-libre", { n, g, lectureSeule, schema: { types: TYPES, couleurs: COULEURS, max: MAX_BLOCS } });
+  }
+  res.render("editeur", { n, g, lectureSeule });
 });
 
 // Le document affiché dans l'iframe de l'éditeur.
@@ -78,7 +92,9 @@ r.get("/newsletters/:id/cadre", (req, res) => {
   if (!n) return res.status(404).send("Introuvable");
   const g = gabarit(n.gabarit);
   const html = rendre(g, n.contenu, {
-    mode: n.statut === "brouillon" ? "cadre" : "apercu",
+    // La mise en page libre garde son script en lecture seule : il règle la
+    // hauteur de l'aperçu, et ne rend rien modifiable.
+    mode: n.statut === "brouillon" || g.libre ? "cadre" : "apercu",
     previewUrl: `${req.app.locals.PUBLIC_URL}/n/${n.id_public}`,
     unsubscribeUrl: `${req.app.locals.PUBLIC_URL}/desabonnement`,
     adressePostale: reglage("adresse_postale"),
@@ -103,6 +119,30 @@ r.patch("/api/newsletters/:id/contenu", (req, res) => {
   ecrire(n.contenu, chemin, valeur);
   sauver(n);
   res.json({ ok: true, chemin, valeur: lire(n.contenu, chemin), modifie_le: new Date().toISOString() });
+});
+
+// Mise en page libre : la liste complète des blocs, remplacée d'un coup.
+// Renvoie le nouvel aperçu, pour éviter un second aller-retour.
+r.put("/api/newsletters/:id/blocs", (req, res) => {
+  const n = charger(req.params.id);
+  if (!n) return res.status(404).json({ erreur: "Introuvable" });
+  if (n.gabarit !== LIBRE) return res.status(400).json({ erreur: "Cette newsletter n'est pas en mise en page libre" });
+  if (n.statut !== "brouillon") return res.status(409).json({ erreur: "Newsletter envoyée : lecture seule" });
+  let blocs;
+  try {
+    blocs = nettoyerBlocs(req.body?.blocs);
+  } catch (e) {
+    return res.status(400).json({ erreur: e.message });
+  }
+  n.contenu.blocs = blocs;
+  sauver(n);
+  const html = rendre(gabarit(LIBRE), n.contenu, {
+    mode: "cadre",
+    previewUrl: `${req.app.locals.PUBLIC_URL}/n/${n.id_public}`,
+    unsubscribeUrl: `${req.app.locals.PUBLIC_URL}/desabonnement`,
+    adressePostale: reglage("adresse_postale"),
+  });
+  res.json({ ok: true, blocs, html, modifie_le: new Date().toISOString() });
 });
 
 export default r;
