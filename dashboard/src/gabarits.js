@@ -19,7 +19,7 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { rendreLibre, texteLibre, contenuModele } from "./blocs.js";
+import { rendreLibre, texteLibre, contenuModele, URL_LOGO } from "./blocs.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIR = resolve(__dirname, "../gabarits");
@@ -216,6 +216,7 @@ export function rendre(g, contenu, options = {}) {
   });
 
   html = html
+    .replaceAll("{{logo_lift}}", URL_LOGO)
     .replaceAll("{{preview_url}}", echapper(previewUrl))
     .replaceAll("{{unsubscribe_url}}", echapper(unsubscribeUrl))
     .replaceAll("{{adresse_postale}}", adressePostale ? echapper(adressePostale) : "[adresse postale à renseigner dans les réglages]");

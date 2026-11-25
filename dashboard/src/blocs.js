@@ -528,7 +528,7 @@ const ENTETE = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "
   <tr>
     <td align="center" style="background-color:#000000; padding:30px 20px 22px 20px;">
       <a href="https://liftfoils.fr/" target="_blank">
-        <img src="https://liftfoils.fr/wp-content/uploads/2022/01/LIFT_retailer_white.png" width="118" alt="Lift Foils France" style="width:118px; height:auto; margin:0 auto;" />
+        <img src="{{logo_lift}}" width="140" alt="Lift Foils France" style="width:140px; height:auto; margin:0 auto;" />
       </a>
     </td>
   </tr>
@@ -549,7 +549,7 @@ const ENTETE = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "
 const PIED = `
   <tr>
     <td align="center" class="px" style="background-color:#000000; padding:36px 44px 40px 44px; border-top:1px solid rgba(255,255,255,0.08);">
-      <img src="https://liftfoils.fr/wp-content/uploads/2022/01/LIFT_retailer_white.png" width="96" alt="Lift Foils France" style="width:96px; height:auto; margin:0 auto 20px auto;" />
+      <img src="{{logo_lift}}" width="100" alt="Lift Foils France" style="width:100px; height:auto; margin:0 auto 20px auto;" />
 
       <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 22px auto;">
         <tr>
@@ -588,6 +588,9 @@ const PIED = `
 // Icônes du pied de page : des PNG (Gmail et Outlook n'affichent pas le SVG),
 // servis par le dashboard lui-même, d'où l'URL publique absolue.
 const URL_PUBLIQUE = (process.env.PUBLIC_URL || "http://localhost:3000").replace(/\/$/, "");
+// Logo « Lift » blanc, sans la mention « retailer » (que Lift ne veut plus voir).
+// Tiré de black-logo-lift.png du site, passé en blanc sur fond transparent.
+export const URL_LOGO = `${URL_PUBLIQUE}/static/icones/logo-lift-blanc.png`;
 const ICONES_PIED = [
   { fichier: "site", alt: "liftfoils.fr", href: "https://liftfoils.fr/" },
   { fichier: "email", alt: "Email", href: "mailto:info@liftfoils.fr" },
@@ -626,6 +629,7 @@ export function rendreLibre(contenu, options = {}) {
     .replace("{{titre}}", () => echapper(contenu.meta?.objet || "Lift Foils France"))
     .replace("{{preheader}}", () => echapper(contenu.meta?.preheader || ""))
     .replace("{{icones}}", () => HTML_ICONES)
+    .replaceAll("{{logo_lift}}", () => URL_LOGO)
     .replaceAll("{{preview_url}}", () => echapper(previewUrl))
     .replaceAll("{{unsubscribe_url}}", () => echapper(unsubscribeUrl))
     .replaceAll("{{adresse_postale}}", () =>
