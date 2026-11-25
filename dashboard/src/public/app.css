@@ -242,6 +242,9 @@ body.editeur { background: var(--gris-clair); }
 .vignette img { width: 100%; height: 100%; object-fit: contain; }
 .image-boutons { display: flex; flex-direction: column; gap: 6px; }
 .image-boutons button { padding: 6px 12px; font-size: 13px; }
+.champ-lien .segments { margin-bottom: 6px; }
+.lien-corps { display: flex; flex-direction: column; gap: 8px; }
+.lien-corps .astuce { font-size: 11px; }
 .champ-liste { display: flex; flex-direction: column; gap: 10px; }
 .champ-liste .item { border: 1px solid #e3e3e3; border-radius: 6px; padding: 8px 10px 12px; margin: 0; }
 .item-entete { display: flex; gap: 12px; align-items: baseline; margin-bottom: 8px; font-size: 13px; }

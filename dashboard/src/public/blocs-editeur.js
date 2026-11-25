@@ -403,10 +403,7 @@
         return libelle(el("input", { type: "text", value: obj[c.cle] ?? "", oninput: (e) => { obj[c.cle] = e.target.value; change(); } }));
 
       case "url":
-        return libelle(el("input", {
-          type: "text", value: obj[c.cle] ?? "", placeholder: "https://liftfoils.fr/…", inputmode: "url", spellcheck: "false",
-          oninput: (e) => { obj[c.cle] = e.target.value; change(); },
-        }));
+        return champLien(c, obj, change);
 
       case "zone": {
         const zone = el("textarea", { rows: c.grand ? 8 : 3, oninput: (e) => { obj[c.cle] = e.target.value; change(); } });
@@ -496,6 +493,82 @@
       }
     }
     return el("span");
+  }
+
+  // ── Champ lien : page web, ou email pré-rempli (mailto:) ─────────────────
+  // Comme sur Mailchimp : « Email » ouvre la messagerie du lecteur avec
+  // l'adresse, l'objet et le message déjà remplis (ex. demande de devis).
+  function lireMailto(v) {
+    const [adresse, requete = ""] = String(v).replace(/^mailto:/i, "").split("?");
+    const p = new URLSearchParams(requete.replace(/\+/g, "%2B"));
+    let a = adresse;
+    try { a = decodeURIComponent(adresse); } catch {}
+    return { adresse: a, objet: p.get("subject") || "", message: p.get("body") || "" };
+  }
+
+  function composerMailto({ adresse, objet, message }) {
+    const a = adresse.trim();
+    if (!a) return "";
+    const q = [];
+    if (objet.trim()) q.push("subject=" + encodeURIComponent(objet.trim()));
+    if (message.trim()) q.push("body=" + encodeURIComponent(message));
+    return "mailto:" + a + (q.length ? "?" + q.join("&") : "");
+  }
+
+  function champLien(c, obj, change) {
+    const initial = String(obj[c.cle] ?? "");
+    let mode = /^mailto:/i.test(initial) ? "email" : "web";
+    let web = mode === "web" ? initial : "";
+    const mail = mode === "email" ? lireMailto(initial) : { adresse: "", objet: "", message: "" };
+
+    const conteneur = el("div", { class: "champ-bloc champ-lien" });
+    const corps = el("div", { class: "lien-corps" });
+
+    const appliquer = () => {
+      obj[c.cle] = mode === "email" ? composerMailto(mail) : web;
+      change();
+    };
+
+    const sousChamp = (libelle, enfant) => el("label", { class: "champ-bloc" }, el("span", { class: "libelle", text: libelle }), enfant);
+
+    function dessiner() {
+      corps.innerHTML = "";
+      if (mode === "web") {
+        corps.append(el("input", {
+          type: "text", value: web, placeholder: "https://liftfoils.fr/…", inputmode: "url", spellcheck: "false",
+          "aria-label": c.libelle,
+          oninput: (e) => { web = e.target.value; appliquer(); },
+        }));
+        return;
+      }
+      const message = el("textarea", { rows: 3, placeholder: "Bonjour, je souhaite un devis pour…", oninput: (e) => { mail.message = e.target.value; appliquer(); } });
+      message.value = mail.message;
+      corps.append(
+        sousChamp("Adresse email", el("input", { type: "text", value: mail.adresse, placeholder: "info@liftfoils.fr", inputmode: "email", spellcheck: "false", oninput: (e) => { mail.adresse = e.target.value; appliquer(); } })),
+        sousChamp("Objet du mail", el("input", { type: "text", value: mail.objet, placeholder: "Demande de devis LIFT5", oninput: (e) => { mail.objet = e.target.value; appliquer(); } })),
+        sousChamp("Message pré-rempli (facultatif)", message),
+        el("span", { class: "astuce discret", text: "Au clic, la messagerie du lecteur s'ouvre avec ces champs déjà remplis." })
+      );
+    }
+
+    const segments = el("div", { class: "segments", role: "radiogroup" });
+    for (const [valeur, nom] of [["web", "Page web"], ["email", "Email"]]) {
+      segments.append(el("button", {
+        type: "button", role: "radio", "aria-checked": String(mode === valeur), class: mode === valeur ? "actif" : null, text: nom,
+        onclick: () => {
+          if (mode === valeur) return;
+          mode = valeur;
+          if (mode === "email" && !mail.adresse) mail.adresse = "info@liftfoils.fr";
+          segments.querySelectorAll("button").forEach((b) => { b.classList.toggle("actif", b.textContent === nom); b.setAttribute("aria-checked", String(b.textContent === nom)); });
+          dessiner();
+          appliquer();
+        },
+      }));
+    }
+
+    conteneur.append(el("span", { class: "libelle", text: c.libelle }), segments, corps);
+    dessiner();
+    return conteneur;
   }
 
   // ── Choix d'une image ────────────────────────────────────────────────────
