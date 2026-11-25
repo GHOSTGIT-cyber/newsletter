@@ -551,13 +551,11 @@ const PIED = `
     <td align="center" class="px" style="background-color:#000000; padding:36px 44px 40px 44px; border-top:1px solid rgba(255,255,255,0.08);">
       <img src="https://liftfoils.fr/wp-content/uploads/2022/01/LIFT_retailer_white.png" width="96" alt="Lift Foils France" style="width:96px; height:auto; margin:0 auto 20px auto;" />
 
-      <p style="margin:0 0 20px 0; font-family:'Oswald','Arial Narrow',Arial,sans-serif; font-size:11px; line-height:16px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase;">
-        <a href="https://www.facebook.com/eFoilCotedAzur" target="_blank" style="color:rgba(255,255,255,0.55); text-decoration:none;">Facebook</a>
-        <span style="color:rgba(255,255,255,0.2);">&nbsp;&nbsp;·&nbsp;&nbsp;</span>
-        <a href="https://www.instagram.com/efoil_cotedazur" target="_blank" style="color:rgba(255,255,255,0.55); text-decoration:none;">Instagram</a>
-        <span style="color:rgba(255,255,255,0.2);">&nbsp;&nbsp;·&nbsp;&nbsp;</span>
-        <a href="https://www.youtube.com/channel/UC-YtLQ9BhQ1UZF3sAk-1OGg" target="_blank" style="color:rgba(255,255,255,0.55); text-decoration:none;">YouTube</a>
-      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 22px auto;">
+        <tr>
+{{icones}}
+        </tr>
+      </table>
 
       <p style="margin:0 0 14px 0; font-family:'Assistant',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; color:rgba(255,255,255,0.4);">
         Une question ? Répondez simplement à cet email, on lit tout.
@@ -587,6 +585,19 @@ const PIED = `
 </html>
 `;
 
+// Icônes du pied de page : des PNG (Gmail et Outlook n'affichent pas le SVG),
+// servis par le dashboard lui-même, d'où l'URL publique absolue.
+const URL_PUBLIQUE = (process.env.PUBLIC_URL || "http://localhost:3000").replace(/\/$/, "");
+const ICONES_PIED = [
+  { fichier: "site", alt: "liftfoils.fr", href: "https://liftfoils.fr/" },
+  { fichier: "email", alt: "Email", href: "mailto:info@liftfoils.fr" },
+  { fichier: "whatsapp", alt: "WhatsApp", href: "https://wa.me/33635305067" },
+  { fichier: "instagram", alt: "Instagram", href: "https://www.instagram.com/efoil_cotedazur/" },
+];
+const HTML_ICONES = ICONES_PIED.map(
+  (i) => `          <td align="center" style="padding:0 7px;"><a href="${i.href}" target="_blank" style="text-decoration:none;"><img src="${URL_PUBLIQUE}/static/icones/${i.fichier}.png" width="40" height="40" alt="${i.alt}" style="width:40px; height:40px; display:block; border:0; font-family:Arial,sans-serif; font-size:10px; color:#ffffff;" /></a></td>`
+).join("\n");
+
 /**
  * Rend une newsletter en mise en page libre.
  *   mode "cadre"  : aperçu de l'éditeur — chaque bloc porte data-bloc, script injecté
@@ -614,6 +625,7 @@ export function rendreLibre(contenu, options = {}) {
   let html = (ENTETE + lignes.join("\n") + PIED)
     .replace("{{titre}}", () => echapper(contenu.meta?.objet || "Lift Foils France"))
     .replace("{{preheader}}", () => echapper(contenu.meta?.preheader || ""))
+    .replace("{{icones}}", () => HTML_ICONES)
     .replaceAll("{{preview_url}}", () => echapper(previewUrl))
     .replaceAll("{{unsubscribe_url}}", () => echapper(unsubscribeUrl))
     .replaceAll("{{adresse_postale}}", () =>
