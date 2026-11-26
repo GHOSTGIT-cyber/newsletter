@@ -6,7 +6,7 @@ import { Router } from "express";
 import { db, reglage, definirReglage } from "../db.js";
 import { nomGabarit } from "../gabarits.js";
 import { STATUTS, compteParStatut, parEmail, listes } from "../contacts.js";
-import { envoyerTest, preparerCampagne, progression, tick, budgetDuJour, plafondQuotidien, configure, annulerProgrammation } from "../envoi.js";
+import { envoyerTest, preparerCampagne, progression, tick, budgetDuJour, plafondQuotidien, configure, annulerProgrammation, restants, etatListes } from "../envoi.js";
 
 const r = Router();
 
@@ -86,12 +86,15 @@ r.get("/newsletters/:id/envoyer", (req, res) => {
   if (!n) return res.status(404).render("erreur", { code: 404, message: "Newsletter introuvable." });
   const comptes = compteParStatut();
   const budget = budgetDuJour();
-  const lesListes = listes();
+  // En cours d'envoi ou programmée : on attend la fin avant une autre vague.
+  if (n.statut === "envoi" || n.statut === "programmee") return res.redirect(`/newsletters/${n.id}/journal`);
+  const lesListes = etatListes(n.id);
   const choisie = String(req.query.liste || "");
-  const destinataires = choisie ? (lesListes.find((l) => l.liste === choisie)?.actifs ?? 0) : comptes.actif;
+  const destinataires = restants(n.id, choisie || null);
   res.render("envoyer", {
     n,
     listes: lesListes,
+    restantTous: restants(n.id),
     listeChoisie: choisie,
     destinataires,
     objet: JSON.parse(n.contenu).meta?.objet || "",
@@ -112,14 +115,13 @@ r.get("/newsletters/:id/envoyer", (req, res) => {
 r.post("/newsletters/:id/envoyer", (req, res) => {
   const n = charger(req.params.id);
   if (!n) return res.status(404).render("erreur", { code: 404, message: "Newsletter introuvable." });
-  if (n.statut !== "brouillon") {
+  // Une newsletter déjà envoyée à une liste peut repartir vers une autre ;
+  // pas pendant qu'une vague est en cours ou programmée.
+  if (n.statut === "envoi" || n.statut === "programmee") {
     return res.redirect(`/newsletters/${n.id}/journal`);
   }
-  const comptes = compteParStatut();
   const nomListe = String(req.body.liste || "").trim() || null;
-  const attendus = nomListe
-    ? (listes().find((l) => l.liste === nomListe)?.actifs ?? 0)
-    : comptes.actif;
+  const attendus = restants(n.id, nomListe);
   // Garde-fou : la confirmation doit porter le nombre de destinataires affiché.
   if (Number(req.body.confirmation) !== attendus || attendus === 0) {
     return res.redirect(
@@ -192,6 +194,59 @@ r.get("/newsletters/:id/journal", (req, res) => {
     p: progression(n.id),
     STATUTS,
   });
+});
+
+// ── Qui a ouvert, qui a cliqué ─────────────────────────────────────────────
+// Page séparée du journal : le journal dit ce qui est parti, celle-ci dit ce
+// que les destinataires en ont fait. Les personnes qui ont cliqué sont les
+// plus intéressantes commercialement, donc elles viennent en premier.
+const FILTRES = {
+  cliques: { titre: "Ont cliqué", ou: "e.clique_le IS NOT NULL" },
+  ouverts: { titre: "Ont ouvert", ou: "e.ouvert_le IS NOT NULL" },
+  muets: { titre: "N'ont pas ouvert", ou: "e.ouvert_le IS NULL AND e.statut IN ('envoye','livre')" },
+  tous: { titre: "Tous les destinataires", ou: "1 = 1" },
+};
+
+function lignesSuivi(newsletterId, filtre) {
+  const f = FILTRES[filtre] || FILTRES.cliques;
+  return db
+    .prepare(
+      `SELECT e.email, e.statut, e.ouvert_le, e.clique_le, c.nom, c.liste
+       FROM envois e LEFT JOIN contacts c ON c.id = e.contact_id
+       WHERE e.newsletter_id = ? AND ${f.ou}
+       ORDER BY e.clique_le DESC, e.ouvert_le DESC, e.email`
+    )
+    .all(newsletterId);
+}
+
+r.get("/newsletters/:id/suivi", (req, res) => {
+  const n = charger(req.params.id);
+  if (!n) return res.status(404).render("erreur", { code: 404, message: "Newsletter introuvable." });
+  const filtre = FILTRES[req.query.f] ? String(req.query.f) : "cliques";
+  res.render("suivi", {
+    n,
+    objet: JSON.parse(n.contenu).meta?.objet || "",
+    p: progression(n.id),
+    filtre,
+    titres: Object.fromEntries(Object.entries(FILTRES).map(([k, v]) => [k, v.titre])),
+    lignes: lignesSuivi(n.id, filtre),
+  });
+});
+
+// Export CSV : sert à rappeler les personnes intéressées.
+r.get("/newsletters/:id/suivi.csv", (req, res) => {
+  const n = charger(req.params.id);
+  if (!n) return res.status(404).send("Introuvable");
+  const filtre = FILTRES[req.query.f] ? String(req.query.f) : "cliques";
+  const lignes = lignesSuivi(n.id, filtre);
+  const cellule = (v) => `"${String(v ?? "").replaceAll('"', '""')}"`;
+  const csv = [
+    "email,nom,liste,a_ouvert,a_clique",
+    ...lignes.map((l) => [l.email, l.nom, l.liste, l.ouvert_le || "", l.clique_le || ""].map(cellule).join(",")),
+  ].join("\n");
+  res.set("Content-Type", "text/csv; charset=utf-8");
+  res.set("Content-Disposition", `attachment; filename="suivi-${filtre}-${new Date().toISOString().slice(0, 10)}.csv"`);
+  res.send(csv);
 });
 
 export default r;

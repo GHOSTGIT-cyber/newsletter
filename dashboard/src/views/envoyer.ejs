@@ -12,16 +12,26 @@
       <a href="?liste=" class="carte-liste <%= listeChoisie ? '' : 'actif' %>">
         <span class="coche" aria-hidden="true"><%= listeChoisie ? '' : '✓' %></span>
         <span class="texte"><span class="nom">Tout le monde</span>
-          <span class="combien"><%= comptes.actif %> destinataires</span></span>
+          <span class="combien"><%= restantTous %> pas encore reçue<%= restantTous > 1 ? 's' : '' %></span></span>
       </a>
-      <% for (const l of listes) { %>
-        <a href="?liste=<%= encodeURIComponent(l.liste) %>" class="carte-liste <%= listeChoisie === l.liste ? 'actif' : '' %>">
-          <span class="coche" aria-hidden="true"><%= listeChoisie === l.liste ? '✓' : '' %></span>
+      <% for (const l of listes) {
+           const faite = l.actifs > 0 && l.recus >= l.actifs;
+           const entamee = l.recus > 0 && !faite;
+           const quand = l.dernier ? new Date(l.dernier.replace(' ', 'T') + 'Z').toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', weekday: 'long', day: 'numeric', month: 'long' }) : ''; %>
+        <a href="?liste=<%= encodeURIComponent(l.liste) %>" class="carte-liste <%= listeChoisie === l.liste ? 'actif' : '' %> <%= faite ? 'faite' : '' %>">
+          <span class="coche" aria-hidden="true"><%= faite ? '✗' : listeChoisie === l.liste ? '✓' : '' %></span>
           <span class="texte"><span class="nom"><%= l.liste %></span>
-            <span class="combien"><%= l.actifs %> destinataires</span></span>
+            <% if (faite) { %>
+              <span class="combien">Déjà envoyée<%= quand ? ' — ' + quand : '' %></span>
+            <% } else if (entamee) { %>
+              <span class="combien"><%= l.recus %> déjà reçue(s), <%= l.actifs - l.recus %> restante(s)</span>
+            <% } else { %>
+              <span class="combien"><%= l.actifs %> destinataires · pas encore envoyée</span>
+            <% } %></span>
         </a>
       <% } %>
     </div>
+    <p class="discret">Une personne qui a déjà reçu cette newsletter ne la reçoit jamais une seconde fois, quelle que soit la liste choisie.</p>
     <p class="rappel-choix"><strong>Choisi :</strong> <%= listeChoisie || 'tout le monde' %> — <%= destinataires %> destinataire<%= destinataires > 1 ? 's' : '' %>.</p>
   </section>
   <% } %>

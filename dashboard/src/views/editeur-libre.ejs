@@ -11,6 +11,8 @@
     <form method="post" action="/newsletters/<%= n.id %>/dupliquer"><button class="bouton">Dupliquer</button></form>
     <% if (lectureSeule) { %>
       <a href="/newsletters/<%= n.id %>/journal" class="bouton">Journal</a>
+      <a href="/newsletters/<%= n.id %>/suivi" class="bouton">Suivi</a>
+      <% if (n.statut === 'envoyee') { %><a href="/newsletters/<%= n.id %>/envoyer" class="bouton principal">Envoyer à une autre liste</a><% } %>
     <% } else { %>
       <button type="button" class="bouton" id="btest">M'envoyer un test</button>
       <a href="/newsletters/<%= n.id %>/envoyer" class="bouton principal">Envoyer…</a>

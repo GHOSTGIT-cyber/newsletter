@@ -6,6 +6,8 @@
       <p class="discret"><%= objet %> · gabarit <%= gabaritNom %><%= n.envoyee_le ? ' · envoyée le ' + n.envoyee_le.slice(0,10) : '' %></p>
     </div>
     <div class="en-ligne">
+      <a href="/newsletters/<%= n.id %>/suivi" class="bouton principal">Qui a ouvert, qui a cliqué</a>
+      <% if (n.statut === 'envoyee') { %><a href="/newsletters/<%= n.id %>/envoyer" class="bouton">Envoyer à une autre liste</a><% } %>
       <a href="/n/<%= n.id_public %>" target="_blank" class="bouton">Aperçu</a>
       <form method="post" action="/newsletters/<%= n.id %>/dupliquer"><button class="bouton">Dupliquer</button></form>
     </div>

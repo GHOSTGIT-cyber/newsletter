@@ -393,3 +393,7 @@ body.editeur { background: var(--gris-clair); }
 .puces-listes .puce .n { font-size: 12px; opacity: .75; }
 .retirer-liste { display: inline-flex; align-items: center; margin: 0 0 0 4px; }
 .retirer-liste .lien { font-size: 13px; }
+.carte-liste.faite { background: #f4f4f4; border-color: #e0e0e0; color: #8a8a8a; }
+.carte-liste.faite .coche { border-color: #c0392b; color: #c0392b; background: #fdecea; }
+.carte-liste.faite .nom { text-decoration: line-through; }
+.carte-liste.faite.actif { background: #555; border-color: #555; color: #fff; }

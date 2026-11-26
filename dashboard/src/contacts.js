@@ -86,8 +86,17 @@ export function lireListe(contenu) {
 export function listes() {
   return db
     .prepare(
-      `SELECT liste, COUNT(*) AS total, SUM(statut = 'actif') AS actifs
-       FROM contacts WHERE liste IS NOT NULL AND liste <> '' GROUP BY liste ORDER BY liste`
+      `SELECT c.liste, COUNT(DISTINCT c.id) AS total,
+              COUNT(DISTINCT CASE WHEN c.statut = 'actif' THEN c.id END) AS actifs,
+              MAX(e.envoye_le) AS dernier_envoi,
+              (SELECT n.nom FROM envois e2 JOIN contacts c2 ON c2.id = e2.contact_id
+                 JOIN newsletters n ON n.id = e2.newsletter_id
+               WHERE c2.liste = c.liste AND e2.statut IN ('envoye','livre')
+               ORDER BY e2.envoye_le DESC LIMIT 1) AS derniere_newsletter
+       FROM contacts c
+       LEFT JOIN envois e ON e.contact_id = c.id AND e.statut IN ('envoye','livre')
+       WHERE c.liste IS NOT NULL AND c.liste <> ''
+       GROUP BY c.liste ORDER BY c.liste`
     )
     .all();
 }

@@ -1,0 +1,41 @@
+<%- include('_entete', { titre: 'Suivi' }) %>
+<main class="page">
+  <p><a href="/newsletters/<%= n.id %>/journal">← Journal de l'envoi</a></p>
+  <div class="entete-page">
+    <div>
+      <h1>Qui a ouvert, qui a cliqué</h1>
+      <p class="discret"><%= n.nom %> · <%= objet %></p>
+    </div>
+    <a href="/newsletters/<%= n.id %>/suivi.csv?f=<%= filtre %>" class="bouton">Télécharger cette liste (Excel)</a>
+  </div>
+
+  <div class="compteurs">
+    <a href="?f=cliques" class="compteur <%= filtre === 'cliques' ? 'actif' : '' %>"><span class="n"><%= p.cliques %></span> ont cliqué <span class="detail discret"><%= p.tauxClic %>% · à rappeler en priorité</span></a>
+    <a href="?f=ouverts" class="compteur <%= filtre === 'ouverts' ? 'actif' : '' %>"><span class="n"><%= p.ouverts %></span> ont ouvert <span class="detail discret"><%= p.tauxOuverture %>%</span></a>
+    <a href="?f=muets" class="compteur <%= filtre === 'muets' ? 'actif' : '' %>"><span class="n"><%= Math.max(0, p.envoye + p.livre - p.ouverts) %></span> n'ont pas ouvert</a>
+    <a href="?f=tous" class="compteur <%= filtre === 'tous' ? 'actif' : '' %>"><span class="n"><%= p.total %></span> au total</a>
+  </div>
+
+  <h2><%= titres[filtre] %> — <%= lignes.length %></h2>
+  <% if (lignes.length === 0) { %>
+    <p class="vide">Personne pour l'instant. Les ouvertures et les clics arrivent au fil de la journée ; la page se met à jour à chaque visite.</p>
+  <% } else { %>
+  <table class="tableau">
+    <thead><tr><th>Email</th><th>Nom</th><th>Liste</th><th>Ouvert</th><th>Cliqué</th></tr></thead>
+    <tbody>
+    <% const quand = (s) => s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''; %>
+    <% for (const l of lignes) { %>
+      <tr>
+        <td class="fort"><a href="mailto:<%= l.email %>"><%= l.email %></a></td>
+        <td class="discret"><%= l.nom || '—' %></td>
+        <td class="discret"><%= l.liste || '—' %></td>
+        <td><% if (l.ouvert_le) { %><span class="statut statut-envoyee">✓ <%= quand(l.ouvert_le) %></span><% } else { %><span class="discret">—</span><% } %></td>
+        <td><% if (l.clique_le) { %><span class="statut statut-programmee">✓ <%= quand(l.clique_le) %></span><% } else { %><span class="discret">—</span><% } %></td>
+      </tr>
+    <% } %>
+    </tbody>
+  </table>
+  <% } %>
+  <p class="discret note-stats" style="margin-top:16px">Une ouverture n'est comptée que si le lecteur affiche les images : le vrai nombre est toujours un peu plus élevé.</p>
+</main>
+<%- include('_pied') %>

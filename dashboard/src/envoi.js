@@ -107,18 +107,18 @@ export const budgetDuJour = () => Math.max(0, plafondQuotidien() - envoyesAujour
  * est constituée tout de suite, mais rien ne part avant l'heure dite.
  */
 export function preparerCampagne(newsletterId, envoiPrevu = null, nomListe = null) {
-  const existants = db
-    .prepare("SELECT COUNT(*) AS n FROM envois WHERE newsletter_id = ?")
-    .get(newsletterId).n;
-  if (existants > 0) return { deja: existants, crees: 0 };
-
+  // Une même newsletter peut partir en plusieurs vagues (une liste par jour) :
+  // on n'ajoute que les contacts qui ne l'ont pas encore reçue. C'est ce qui
+  // garantit que personne ne la reçoit deux fois.
   const inserer = db.prepare(
     "INSERT INTO envois (newsletter_id, contact_id, email, statut) VALUES (?, ?, ?, 'attente')"
   );
   // Une liste choisie restreint la campagne à ce paquet d'adresses.
+  const pasEncore = "AND NOT EXISTS (SELECT 1 FROM envois e WHERE e.newsletter_id = ? AND e.contact_id = contacts.id AND e.statut <> 'echec')";
   const liste = nomListe
-    ? db.prepare("SELECT id, email FROM contacts WHERE statut = 'actif' AND liste = ? ORDER BY id").all(nomListe)
-    : db.prepare("SELECT id, email FROM contacts WHERE statut = 'actif' ORDER BY id").all();
+    ? db.prepare(`SELECT id, email FROM contacts WHERE statut = 'actif' AND liste = ? ${pasEncore} ORDER BY id`).all(nomListe, newsletterId)
+    : db.prepare(`SELECT id, email FROM contacts WHERE statut = 'actif' ${pasEncore} ORDER BY id`).all(newsletterId);
+  if (liste.length === 0) return { deja: 0, crees: 0 };
   db.exec("BEGIN");
   try {
     for (const c of liste) inserer.run(newsletterId, c.id, c.email);
@@ -135,6 +135,33 @@ export function preparerCampagne(newsletterId, envoiPrevu = null, nomListe = nul
   return { deja: 0, crees: liste.length };
 }
 
+/** Combien de contacts actifs ne l'ont pas encore reçue (toute la base ou une liste). */
+export function restants(newsletterId, nomListe = null) {
+  const pasEncore = "AND NOT EXISTS (SELECT 1 FROM envois e WHERE e.newsletter_id = ? AND e.contact_id = contacts.id AND e.statut <> 'echec')";
+  return nomListe
+    ? db.prepare(`SELECT COUNT(*) AS n FROM contacts WHERE statut = 'actif' AND liste = ? ${pasEncore}`).get(nomListe, newsletterId).n
+    : db.prepare(`SELECT COUNT(*) AS n FROM contacts WHERE statut = 'actif' ${pasEncore}`).get(newsletterId).n;
+}
+
+/**
+ * Pour chaque liste : combien l'ont déjà reçue, quand, combien restent.
+ * Sert à cocher « déjà envoyé » sur les listes.
+ */
+export function etatListes(newsletterId) {
+  return db
+    .prepare(
+      `SELECT c.liste,
+              SUM(c.statut = 'actif') AS actifs,
+              SUM(e.id IS NOT NULL) AS recus,
+              MAX(e.envoye_le) AS dernier
+       FROM contacts c
+       LEFT JOIN envois e ON e.contact_id = c.id AND e.newsletter_id = ? AND e.statut IN ('envoye','livre','attente')
+       WHERE c.liste IS NOT NULL AND c.liste <> ''
+       GROUP BY c.liste ORDER BY c.liste`
+    )
+    .all(newsletterId);
+}
+
 /**
  * Annule une programmation : la file est vidée et la newsletter redevient un
  * brouillon modifiable. Refusé dès qu'un email est parti.
@@ -142,14 +169,17 @@ export function preparerCampagne(newsletterId, envoiPrevu = null, nomListe = nul
 export function annulerProgrammation(newsletterId) {
   const n = db.prepare("SELECT statut FROM newsletters WHERE id = ?").get(newsletterId);
   if (!n || n.statut !== "programmee") return { ok: false, erreur: "Cette newsletter n'est pas programmée." };
+  // Les vagues déjà parties restent ; seule celle en attente est annulée.
   const partis = db
     .prepare("SELECT COUNT(*) AS n FROM envois WHERE newsletter_id = ? AND statut <> 'attente'")
     .get(newsletterId).n;
-  if (partis > 0) return { ok: false, erreur: "Des emails sont déjà partis : l'envoi ne peut plus être annulé." };
   db.exec("BEGIN");
   try {
     db.prepare("DELETE FROM envois WHERE newsletter_id = ? AND statut = 'attente'").run(newsletterId);
-    db.prepare("UPDATE newsletters SET statut = 'brouillon', envoi_prevu = NULL WHERE id = ?").run(newsletterId);
+    db.prepare("UPDATE newsletters SET statut = ?, envoi_prevu = NULL WHERE id = ?").run(
+      partis > 0 ? "envoyee" : "brouillon",
+      newsletterId
+    );
     db.exec("COMMIT");
   } catch (e) {
     db.exec("ROLLBACK");
