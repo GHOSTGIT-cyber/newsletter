@@ -7,12 +7,22 @@
   <% if (listes.length) { %>
   <section class="carte">
     <h2>À qui l'envoyer</h2>
+    <p class="discret sous-titre">Cliquez sur le paquet d'adresses à qui envoyer. Le bouton choisi devient noir.</p>
     <div class="choix-liste">
-      <a href="?liste=" class="puce <%= listeChoisie ? '' : 'actif' %>">Tout le monde <span class="n"><%= comptes.actif %></span></a>
+      <a href="?liste=" class="carte-liste <%= listeChoisie ? '' : 'actif' %>">
+        <span class="coche" aria-hidden="true"><%= listeChoisie ? '' : '✓' %></span>
+        <span class="texte"><span class="nom">Tout le monde</span>
+          <span class="combien"><%= comptes.actif %> destinataires</span></span>
+      </a>
       <% for (const l of listes) { %>
-        <a href="?liste=<%= encodeURIComponent(l.liste) %>" class="puce <%= listeChoisie === l.liste ? 'actif' : '' %>"><%= l.liste %> <span class="n"><%= l.actifs %></span></a>
+        <a href="?liste=<%= encodeURIComponent(l.liste) %>" class="carte-liste <%= listeChoisie === l.liste ? 'actif' : '' %>">
+          <span class="coche" aria-hidden="true"><%= listeChoisie === l.liste ? '✓' : '' %></span>
+          <span class="texte"><span class="nom"><%= l.liste %></span>
+            <span class="combien"><%= l.actifs %> destinataires</span></span>
+        </a>
       <% } %>
     </div>
+    <p class="rappel-choix"><strong>Choisi :</strong> <%= listeChoisie || 'tout le monde' %> — <%= destinataires %> destinataire<%= destinataires > 1 ? 's' : '' %>.</p>
   </section>
   <% } %>
 

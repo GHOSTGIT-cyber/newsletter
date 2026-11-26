@@ -37,7 +37,7 @@
 
   <% if (listes.length) { %>
   <h2>Listes d'envoi</h2>
-  <div class="choix-liste">
+  <div class="puces-listes">
     <a href="/contacts" class="puce <%= listeFiltre ? '' : 'actif' %>">Toutes</a>
     <% for (const l of listes) { %>
       <a href="/contacts?liste=<%= encodeURIComponent(l.liste) %>" class="puce <%= listeFiltre === l.liste ? 'actif' : '' %>"><%= l.liste %> <span class="n"><%= l.actifs %> actifs</span></a>

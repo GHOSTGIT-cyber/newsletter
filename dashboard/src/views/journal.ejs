@@ -39,7 +39,7 @@
     <span class="compteur fort-compteur"><span class="n" data-p="tauxOuverture"><%= p.tauxOuverture %></span>% d'ouverture
       <span class="detail discret"><span data-p="ouverts"><%= p.ouverts %></span> sur <span data-p="partis"><%= p.envoye + p.livre %></span> emails partis</span></span>
     <span class="compteur"><span class="n" data-p="cliques"><%= p.cliques %></span> clic<%= p.cliques > 1 ? 's' : '' %>
-      <span class="detail discret"><%= p.cliques > 0 ? p.tauxClic + '% des emails partis' : 'suivi des clics désactivé pour cette campagne' %></span></span>
+      <span class="detail discret"><%= p.tauxClic %>% des emails partis · voir qui dans le tableau</span></span>
   </div>
   <p class="discret note-stats">Une ouverture n'est comptée que si le lecteur affiche les images. Le vrai nombre est donc toujours un peu plus élevé — c'est vrai de tous les outils, Mailchimp compris.</p>
   <% } %>

@@ -128,6 +128,41 @@ node --no-warnings=ExperimentalWarning -e "import('./src/gabarits.js').then(m =>
   s'est désabonné pendant la campagne ne reçoit rien.
 - Une newsletter envoyée passe en lecture seule.
 
+## Listes d'envoi
+
+Un contact appartient à **au plus une liste** (`contacts.liste`, NULL = aucune).
+Elles servent à découper un envoi en plusieurs paquets : Anna a par exemple
+réparti sa liste Black Friday 2026 en « envoi 1 » (499), « envoi 2 » (500) et
+« envoi 3 » (315), envoyés à trois jours différents.
+
+Pour ranger des adresses dans une liste : page Contacts → Importer, en
+remplissant « Ranger dans la liste », ou en donnant un CSV avec une colonne
+`liste` (qui prime). **Une adresse déjà connue n'est jamais dupliquée** : elle
+change simplement de liste. Un désabonné reste exclu et n'est rangé nulle part.
+
+Sur la page d'envoi, on choisit le paquet avant d'envoyer ; le compteur de
+destinataires et le garde-fou de confirmation suivent la liste choisie.
+
+## Statistiques
+
+Activé le 26 novembre 2026, côté Resend **et** côté dashboard :
+
+- **Ouvertures et clics suivis** (`open_tracking` et `click_tracking` sur le
+  domaine `news.liftfoils.fr`). Ils imposent un sous-domaine de suivi :
+  `track.news.liftfoils.fr` → `links2.resend-dns.com`, CNAME posé sur
+  Cloudflare, sans proxy. Un sous-domaine de suivi **ne peut jamais être
+  supprimé** chez Resend : ne pas retirer cet enregistrement DNS.
+- Le suivi des clics **réécrit les liens** de l'email vers ce sous-domaine.
+  C'est le prix à payer pour savoir qui clique.
+- Le webhook écoute `sent`, `delivered`, `bounced`, `complained`, `opened` et
+  `clicked`. On ne garde que le **premier** instant d'ouverture et de clic
+  (`envois.ouvert_le`, `envois.clique_le`) : c'est le taux qui compte.
+- Le journal d'une campagne affiche le taux d'ouverture, le taux de clic, et
+  pour chaque destinataire s'il a ouvert et cliqué.
+- Seuls les emails partis **après** l'activation sont mesurés, et une ouverture
+  ne compte que si le lecteur affiche les images : le chiffre réel est toujours
+  un peu plus élevé.
+
 ## Le désabonnement
 
 `GET /desabonnement/:jeton` affiche une page avec un bouton,
@@ -209,10 +244,12 @@ docker run -p 3000:3000 -v newsletter-data:/data --env-file .env newsletter-dash
   contient 1 300 contacts réels : le dashboard s'ouvre sans mot de passe pour
   qui a l'URL. Retirer la variable dans Coolify pour activer la connexion ;
   les comptes de `COMPTES_INITIAUX` sont déjà créés.
-- **Statistiques d'ouverture et de clics** : demandées par la cliente, pas
-  encore faites. Il faut activer le suivi côté Resend puis traiter les
-  événements `email.opened` et `email.clicked` dans le webhook, qui ne gère
-  aujourd'hui que `delivered`, `bounced` et `complained`.
+- **Un déploiement Coolify peut être incomplet** : le 26 novembre, une
+  modification de `src/contacts.js` n'était pas prise alors que les vues
+  l'étaient, et l'import rangeait les contacts dans aucune liste sans erreur.
+  Un redéploiement forcé a réglé le problème. En cas de comportement
+  inexplicable après un push, forcer un redéploiement avant de chercher plus
+  loin.
 - **Réactivation d'un contact** désabonné, en rebond ou en plainte :
   impossible autrement qu'en le supprimant puis en le réajoutant, ce qui
   change son jeton. C'est volontaire, mais la question reviendra.
