@@ -143,6 +143,14 @@ change simplement de liste. Un désabonné reste exclu et n'est rangé nulle par
 Sur la page d'envoi, on choisit le paquet avant d'envoyer ; le compteur de
 destinataires et le garde-fou de confirmation suivent la liste choisie.
 
+**Une même newsletter part en plusieurs vagues** : après l'envoi à une liste,
+le journal propose « Envoyer à une autre liste ». Seuls les contacts qui ne
+l'ont pas encore reçue sont ajoutés : **personne ne la reçoit deux fois**,
+quelle que soit la liste choisie (un envoi en échec peut être retenté).
+Chaque liste est marquée « déjà envoyée » (croix rouge, date) sur la page
+d'envoi ; sur la page Contacts, une liste n'est cochée que si elle a reçu la
+dernière newsletter **en entier**, sinon elle indique « en partie (n/total) ».
+
 ## Statistiques
 
 Activé le 26 novembre 2026, côté Resend **et** côté dashboard :
@@ -157,8 +165,11 @@ Activé le 26 novembre 2026, côté Resend **et** côté dashboard :
 - Le webhook écoute `sent`, `delivered`, `bounced`, `complained`, `opened` et
   `clicked`. On ne garde que le **premier** instant d'ouverture et de clic
   (`envois.ouvert_le`, `envois.clique_le`) : c'est le taux qui compte.
-- Le journal d'une campagne affiche le taux d'ouverture, le taux de clic, et
-  pour chaque destinataire s'il a ouvert et cliqué.
+- Le journal d'une campagne affiche le taux d'ouverture et le taux de clic.
+- **Page « Qui a ouvert, qui a cliqué »** (`/newsletters/:id/suivi`, bouton
+  depuis le journal) : filtres « ont cliqué » (par défaut, les personnes à
+  rappeler), « ont ouvert », « n'ont pas ouvert », « tous », avec date et
+  heure, et export CSV de la liste affichée.
 - Seuls les emails partis **après** l'activation sont mesurés, et une ouverture
   ne compte que si le lecteur affiche les images : le chiffre réel est toujours
   un peu plus élevé.
