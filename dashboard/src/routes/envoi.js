@@ -3,7 +3,7 @@
  * journal de ce qui est parti.
  */
 import { Router } from "express";
-import { db, reglage } from "../db.js";
+import { db, reglage, definirReglage } from "../db.js";
 import { nomGabarit } from "../gabarits.js";
 import { STATUTS, compteParStatut, parEmail } from "../contacts.js";
 import { envoyerTest, preparerCampagne, progression, tick, budgetDuJour, plafondQuotidien, configure, annulerProgrammation } from "../envoi.js";
@@ -117,6 +117,10 @@ r.post("/newsletters/:id/envoyer", (req, res) => {
         encodeURIComponent("Le nombre de destinataires a changé depuis l'affichage. Vérifiez et recommencez.")
     );
   }
+  // Taille des vagues : choisie au moment de l'envoi, conservée pour la suite.
+  const vague = Number(req.body.vague);
+  if (Number.isFinite(vague) && vague > 0) definirReglage("plafond_quotidien", String(Math.min(Math.round(vague), 100000)));
+
   // Envoi différé : on vérifie que l'instant est bien à venir.
   let prevu = null;
   if (String(req.body.mode || "") === "programme") {

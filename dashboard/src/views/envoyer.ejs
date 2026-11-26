@@ -46,6 +46,14 @@
         <input type="hidden" name="confirmation" value="<%= comptes.actif %>">
         <input type="hidden" name="quand_utc" id="quand_utc">
 
+        <div class="vagues">
+          <label>Envoyer par vagues de
+            <input type="number" name="vague" id="vague" value="<%= plafond %>" min="1" max="100000" step="50">
+            emails par jour
+          </label>
+          <p class="discret" id="recap-vagues"></p>
+        </div>
+
         <div class="choix-envoi">
           <label class="option"><input type="radio" name="mode" value="maintenant" checked>
             <span><span class="fort">Envoyer maintenant</span><span class="discret">Le départ commence dans la minute.</span></span></label>
@@ -85,6 +93,8 @@
           const recap = document.getElementById("recap-date");
           const utc = document.getElementById("quand_utc");
           const bouton = document.getElementById("bouton-envoi");
+          const vague = document.getElementById("vague");
+          const recapVagues = document.getElementById("recap-vagues");
           const nb = <%= comptes.actif %>;
           const mode = () => f.querySelector('input[name="mode"]:checked').value;
           const pluriel = nb > 1 ? "s" : "";
@@ -114,6 +124,19 @@
             if (jours === 1) return "demain";
             return "dans " + jours + " jours";
           }
+
+          function direVagues() {
+            const v = Math.round(Number(vague.value));
+            if (!Number.isFinite(v) || v < 1) { recapVagues.textContent = ""; return; }
+            if (v >= nb) {
+              recapVagues.textContent = "Les " + nb + " partent le même jour, en " + Math.max(1, Math.round(nb * 0.6 / 60)) + " min environ.";
+            } else {
+              const jours = Math.ceil(nb / v);
+              recapVagues.textContent = v + " le premier jour, puis le reste automatiquement les jours suivants : " + jours + " jours en tout.";
+            }
+          }
+          vague.addEventListener("input", direVagues);
+          direVagues();
 
           function rafraichir() {
             const programme = mode() === "programme";

@@ -13,7 +13,16 @@ import { gabarit, rendre, versionTexte } from "./gabarits.js";
 
 const API = "https://api.resend.com/emails";
 
-export const plafondQuotidien = () => Number(process.env.DAILY_LIMIT || 90);
+/**
+ * Combien d'emails par jour au plus. Réglable dans l'interface (table
+ * reglages) ; la variable d'environnement ne sert plus que de valeur de
+ * départ, pour ne pas avoir à redéployer quand on change de rythme.
+ */
+export function plafondQuotidien() {
+  const enBase = Number(reglage("plafond_quotidien", ""));
+  if (Number.isFinite(enBase) && enBase > 0) return Math.min(enBase, 100000);
+  return Number(process.env.DAILY_LIMIT || 90);
+}
 export const expediteur = () => process.env.MAIL_FROM || "Lift Foils France <news@news.liftfoils.fr>";
 export const configure = () => Boolean(process.env.RESEND_API_KEY);
 

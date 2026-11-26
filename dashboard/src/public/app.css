@@ -360,3 +360,7 @@ body.editeur { background: var(--gris-clair); }
 .recap-date { margin: 14px 0 4px; font-size: 16px; font-weight: 600; color: var(--encre); }
 .recap-date::first-letter { text-transform: uppercase; }
 .recap-date.probleme { color: var(--danger); }
+.vagues { margin: 18px 0 4px; padding: 14px; background: var(--fond); border-radius: 6px; }
+.vagues label { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0; font-size: 15px; color: var(--encre); }
+.vagues input { width: 110px; margin: 0; font-size: 16px; padding: 8px 10px; text-align: right; }
+.vagues .discret { margin: 8px 0 0; font-size: 13px; }
