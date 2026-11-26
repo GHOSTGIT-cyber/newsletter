@@ -180,6 +180,9 @@ export function urlSure(u, { image = false } = {}) {
   let s = String(u ?? "").trim();
   if (!s) return "";
   if (/^\/\//.test(s)) s = "https:" + s;
+  // « info@liftfoils.fr » tapé seul : c'est une adresse email, pas un site.
+  // Sans cela le lien était refusé en silence et le bouton perdait sa cible.
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(s) && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s)) s = "mailto:" + s;
   // « liftfoils.fr/boutique » tapé sans https:// : on le complète.
   if (!/^[a-z][a-z0-9+.-]*:/i.test(s) && /^[\w-]+(\.[\w-]+)+(\/|$|\?|#)/.test(s)) s = "https://" + s;
   const ok = image ? /^https?:\/\//i : /^(https?:\/\/|mailto:|tel:)/i;

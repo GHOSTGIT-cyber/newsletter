@@ -265,6 +265,9 @@ body.editeur { background: var(--gris-clair); }
 .champ-lien .segments { margin-bottom: 6px; }
 .lien-corps { display: flex; flex-direction: column; gap: 8px; }
 .lien-corps .astuce { font-size: 11px; }
+.lien-corps .bascule { margin: 4px 0 0; color: #8a6d00; background: #fff4d6; padding: 6px 8px; border-radius: 4px; font-size: 12px; }
+.lien-corps .bascule .lien { font-size: 12px; font-weight: 600; color: #6b5300; }
+.lien-corps .bascule[hidden] { display: none; }
 .champ-liste { display: flex; flex-direction: column; gap: 10px; }
 .champ-liste .item { border: 1px solid #e3e3e3; border-radius: 6px; padding: 8px 10px 12px; margin: 0; }
 .item-entete { display: flex; gap: 12px; align-items: baseline; margin-bottom: 8px; font-size: 13px; }

@@ -534,11 +534,26 @@
     function dessiner() {
       corps.innerHTML = "";
       if (mode === "web") {
-        corps.append(el("input", {
+        // Une adresse email tapée ici marche, mais le mode Email est plus clair
+        // (objet et message) : on le propose au lieu de laisser un doute.
+        const alerte = el("p", { class: "astuce bascule", hidden: true },
+          "On dirait une adresse email. ",
+          el("button", {
+            type: "button", class: "lien", text: "Passer en mode Email",
+            onclick: () => segments.querySelector("[aria-checked=false]")?.click(),
+          })
+        );
+        const champ = el("input", {
           type: "text", value: web, placeholder: "https://liftfoils.fr/…", inputmode: "url", spellcheck: "false",
           "aria-label": c.libelle,
-          oninput: (e) => { web = e.target.value; appliquer(); },
-        }));
+          oninput: (e) => {
+            web = e.target.value;
+            alerte.hidden = !/^\s*(mailto:)?[^\s@]+@[^\s@]+\.[^\s@]{2,}/.test(web);
+            appliquer();
+          },
+        });
+        alerte.hidden = !/^\s*(mailto:)?[^\s@]+@[^\s@]+\.[^\s@]{2,}/.test(web);
+        corps.append(champ, alerte);
         return;
       }
       const message = el("textarea", { rows: 3, placeholder: "Bonjour, je souhaite un devis pour…", oninput: (e) => { mail.message = e.target.value; appliquer(); } });
