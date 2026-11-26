@@ -41,6 +41,13 @@
     <a href="/contacts" class="puce <%= listeFiltre ? '' : 'actif' %>">Toutes</a>
     <% for (const l of listes) { %>
       <a href="/contacts?liste=<%= encodeURIComponent(l.liste) %>" class="puce <%= listeFiltre === l.liste ? 'actif' : '' %>"><%= l.liste %> <span class="n"><%= l.actifs %> actifs</span></a>
+      <% if (listeFiltre === l.liste) { %>
+      <form method="post" action="/contacts/listes/retirer" class="retirer-liste"
+            onsubmit="return confirm('Retirer l'étiquette « <%= l.liste %> » ? Les contacts sont conservés, ils ne seront simplement plus rangés dans cette liste.')">
+        <input type="hidden" name="liste" value="<%= l.liste %>">
+        <button class="lien danger">Retirer cette liste</button>
+      </form>
+      <% } %>
     <% } %>
   </div>
   <% } %>

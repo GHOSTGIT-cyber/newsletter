@@ -391,3 +391,5 @@ body.editeur { background: var(--gris-clair); }
 .puces-listes .puce:hover { border-color: #999; }
 .puces-listes .puce.actif { background: var(--encre); border-color: var(--encre); color: var(--blanc); font-weight: 600; }
 .puces-listes .puce .n { font-size: 12px; opacity: .75; }
+.retirer-liste { display: inline-flex; align-items: center; margin: 0 0 0 4px; }
+.retirer-liste .lien { font-size: 13px; }

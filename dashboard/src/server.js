@@ -37,6 +37,9 @@ app.use(chargerUtilisateur);
 app.use(verifierOrigine);
 
 app.locals.PUBLIC_URL = (process.env.PUBLIC_URL || "http://localhost:3000").replace(/\/$/, "");
+// Les fichiers statiques sont mis en cache une heure : sans ce numéro, une
+// feuille de style modifiée n'arrive pas tout de suite chez la cliente.
+app.locals.VERSION = String(Date.now());
 
 // Public
 // Images téléversées : chargées par les clients mail des destinataires. Le nom

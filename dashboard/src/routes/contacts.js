@@ -84,6 +84,15 @@ r.post("/contacts/import", async (req, res) => {
   });
 });
 
+// Retire l'étiquette d'une liste. Les contacts restent, seul le rangement
+// disparaît — on ne supprime jamais un contact par ce chemin.
+r.post("/contacts/listes/retirer", (req, res) => {
+  const nom = String(req.body.liste || "").trim();
+  if (!nom) return res.redirect("/contacts");
+  const n = db.prepare("UPDATE contacts SET liste = NULL WHERE liste = ?").run(nom).changes;
+  res.redirect("/contacts?m=" + encodeURIComponent(`Liste « ${nom} » retirée de ${n} contact${n > 1 ? "s" : ""}. Aucun contact supprimé.`));
+});
+
 r.post("/contacts", (req, res) => {
   const { ok, message } = ajouter(req.body.email, req.body.nom, req.body.source);
   res.redirect("/contacts?" + (ok ? "m=" : "e=") + encodeURIComponent(message));
