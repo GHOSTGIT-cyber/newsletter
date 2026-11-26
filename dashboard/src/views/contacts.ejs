@@ -92,7 +92,14 @@
   <table class="tableau">
     <thead><tr><th>Email</th><th>Nom</th><th>Liste</th><th>Statut</th><th>Depuis</th><th>Consentement</th><th></th></tr></thead>
     <tbody>
-    <% for (const c of contacts) { %>
+    <% let groupe = null;
+       const effectifs = {};
+       for (const c of contacts) { const k = c.liste || ''; effectifs[k] = (effectifs[k] || 0) + 1; }
+       for (const c of contacts) {
+         const k = c.liste || '';
+         if (k !== groupe) { groupe = k; %>
+      <tr class="groupe-liste"><td colspan="7"><%= k || 'Sans liste' %> <span class="discret">· <%= effectifs[k] %> contact<%= effectifs[k] > 1 ? 's' : '' %></span></td></tr>
+    <% } %>
       <tr>
         <td class="fort"><%= c.email %></td>
         <td class="discret"><%= c.nom || '—' %></td>

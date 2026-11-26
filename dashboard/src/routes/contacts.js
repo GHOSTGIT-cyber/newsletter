@@ -41,7 +41,7 @@ r.get("/contacts", (req, res) => {
   if (STATUTS[filtre]) { ou.push("statut = ?"); args.push(filtre); }
   if (liste) { ou.push("liste = ?"); args.push(liste); }
   const contacts = db
-    .prepare(`SELECT * FROM contacts ${ou.length ? "WHERE " + ou.join(" AND ") : ""} ORDER BY email`)
+    .prepare(`SELECT * FROM contacts ${ou.length ? "WHERE " + ou.join(" AND ") : ""} ORDER BY (liste IS NULL OR liste = ''), liste COLLATE NOCASE, email`)
     .all(...args);
   res.render("contacts", {
     contacts,
@@ -72,7 +72,7 @@ r.post("/contacts/import", async (req, res) => {
   const nomListe = extraireChamp(brut, m[1] || m[2], "liste") || null;
   const rapport = importer(liste, { source, date, nomListe });
   res.render("contacts", {
-    contacts: db.prepare("SELECT * FROM contacts ORDER BY email").all(),
+    contacts: db.prepare("SELECT * FROM contacts ORDER BY (liste IS NULL OR liste = ''), liste COLLATE NOCASE, email").all(),
     comptes: compteParStatut(),
     listes: listes(),
     listeFiltre: "",
@@ -113,11 +113,11 @@ r.post("/contacts/:id/supprimer", (req, res) => {
 });
 
 r.get("/contacts/export", (req, res) => {
-  const lignes = db.prepare("SELECT email, nom, statut, statut_date, consentement_date, consentement_source FROM contacts ORDER BY email").all();
+  const lignes = db.prepare("SELECT email, nom, liste, statut, statut_date, consentement_date, consentement_source FROM contacts ORDER BY (liste IS NULL OR liste = ''), liste COLLATE NOCASE, email").all();
   const csv = [
-    "email,nom,statut,statut_date,consentement_date,consentement_source",
+    "email,nom,liste,statut,statut_date,consentement_date,consentement_source",
     ...lignes.map((l) =>
-      [l.email, l.nom, l.statut, l.statut_date, l.consentement_date, l.consentement_source]
+      [l.email, l.nom, l.liste, l.statut, l.statut_date, l.consentement_date, l.consentement_source]
         .map((v) => `"${String(v ?? "").replaceAll('"', '""')}"`)
         .join(",")
     ),
