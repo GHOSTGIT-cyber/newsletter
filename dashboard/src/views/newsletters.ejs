@@ -4,40 +4,16 @@
     <h1>Newsletters</h1>
   </div>
 
-  <section class="gabarits">
-    <h2>Créer une mise en page libre</h2>
-    <p class="discret sous-titre">Vous composez la newsletter bloc par bloc : bannières, textes, images, produits, colonnes, code promo… Ajoutez, déplacez et supprimez les sections comme vous voulez.</p>
-    <div class="cartes">
-    <% for (const m of modeles) { %>
-      <form method="post" action="/newsletters" class="carte-gabarit libre">
-        <input type="hidden" name="gabarit" value="libre">
-        <input type="hidden" name="modele" value="<%= m.cle %>">
-        <span class="numero">Blocs</span>
-        <span class="nom"><%= m.nom %></span>
-        <span class="objet discret"><%= m.description %></span>
-        <button type="submit" class="principal">Créer</button>
-      </form>
-    <% } %>
-    </div>
-  </section>
-
-  <section class="gabarits">
-    <h2>Créer une newsletter à partir d'un gabarit</h2>
-    <div class="cartes">
-    <% for (const [cle, g] of Object.entries(catalogue)) { %>
-      <form method="post" action="/newsletters" class="carte-gabarit">
-        <input type="hidden" name="gabarit" value="<%= cle %>">
-        <span class="numero"><%= cle %></span>
-        <span class="nom"><%= g.nom %></span>
-        <span class="objet discret"><%= g.objet %></span>
-        <button type="submit" class="principal">Créer</button>
-      </form>
-    <% } %>
-    </div>
-  </section>
+  <% if (reprendre) { %>
+  <a class="reprendre" href="/newsletters/<%= reprendre.id %>">
+    <span class="etiquette">Reprendre où vous en étiez</span>
+    <span class="nom"><%= reprendre.nom %></span>
+    <span class="discret"><%= reprendre.objet || 'Sans objet' %> · modifiée <%= reprendre.quand %></span>
+  </a>
+  <% } %>
 
   <% if (newsletters.length === 0) { %>
-    <p class="vide">Aucune newsletter pour l'instant. Cliquez sur « Créer » sous un gabarit ci-dessus.</p>
+    <p class="vide">Aucune newsletter pour l'instant. Choisissez un point de départ ci-dessous.</p>
   <% } else { %>
   <h2>Vos newsletters</h2>
   <table class="tableau">
@@ -49,12 +25,12 @@
         <td class="discret"><%= n.objet %></td>
         <td class="discret"><%= n.gabaritNom %></td>
         <td><span class="statut statut-<%= n.statut %>"><%= n.statut === 'brouillon' ? 'Brouillon' : n.statut === 'envoi' ? 'Envoi en cours' : 'Envoyée' %></span></td>
-        <td class="discret" title="<%= n.modifie_le %> UTC"><%= n.modifie_le.slice(0, 16).replace('T', ' ') %></td>
+        <td class="discret" title="<%= n.modifie_le %> UTC"><%= n.quand %></td>
         <td class="actions">
           <a href="/n/<%= n.id_public %>" target="_blank">Aperçu</a>
           <form method="post" action="/newsletters/<%= n.id %>/dupliquer"><button class="lien">Dupliquer</button></form>
           <% if (n.statut === 'brouillon') { %>
-          <form method="post" action="/newsletters/<%= n.id %>/supprimer" onsubmit="return confirm('Supprimer cette newsletter ? Cette action est définitive.')"><button class="lien danger">Supprimer</button></form>
+          <form method="post" action="/newsletters/<%= n.id %>/supprimer" onsubmit="return confirm('Supprimer « <%= n.nom.replace(/[\\'"]/g, "") %> » ? Cette action est définitive.')"><button class="lien danger">Supprimer</button></form>
           <% } %>
         </td>
       </tr>
@@ -62,5 +38,41 @@
     </tbody>
   </table>
   <% } %>
+
+  <details class="creation" <%= newsletters.length === 0 ? 'open' : '' %>>
+    <summary>+ Créer une nouvelle newsletter</summary>
+
+    <section class="gabarits">
+      <h2>Mise en page libre</h2>
+      <p class="discret sous-titre">Vous composez la newsletter bloc par bloc : bannières, textes, images, produits, colonnes, code promo… Ajoutez, déplacez et supprimez les sections comme vous voulez.</p>
+      <div class="cartes">
+      <% for (const m of modeles) { %>
+        <form method="post" action="/newsletters" class="carte-gabarit libre">
+          <input type="hidden" name="gabarit" value="libre">
+          <input type="hidden" name="modele" value="<%= m.cle %>">
+          <span class="numero">Blocs</span>
+          <span class="nom"><%= m.nom %></span>
+          <span class="objet discret"><%= m.description %></span>
+          <button type="submit" class="principal">Créer</button>
+        </form>
+      <% } %>
+      </div>
+    </section>
+
+    <section class="gabarits">
+      <h2>À partir d'un gabarit</h2>
+      <div class="cartes">
+      <% for (const [cle, g] of Object.entries(catalogue)) { %>
+        <form method="post" action="/newsletters" class="carte-gabarit">
+          <input type="hidden" name="gabarit" value="<%= cle %>">
+          <span class="numero"><%= cle %></span>
+          <span class="nom"><%= g.nom %></span>
+          <span class="objet discret"><%= g.objet %></span>
+          <button type="submit" class="principal">Créer</button>
+        </form>
+      <% } %>
+      </div>
+    </section>
+  </details>
 </main>
 <%- include('_pied') %>

@@ -12,6 +12,17 @@ const r = Router();
 
 const idPublic = () => randomBytes(9).toString("base64url");
 
+// Dates affichées à l'heure de Paris : la base stocke de l'UTC.
+const PARIS = "Europe/Paris";
+const quandFr = (s) =>
+  new Date(s.replace(" ", "T") + "Z").toLocaleString("fr-FR", {
+    timeZone: PARIS, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+  });
+
+/** « Promotion — 26 novembre » : deux newsletters créées le même jour restent distinctes par leur date. */
+const nommer = (base) =>
+  `${base} — ${new Date().toLocaleDateString("fr-FR", { timeZone: PARIS, day: "numeric", month: "long" })}`;
+
 function charger(id) {
   const n = db.prepare("SELECT * FROM newsletters WHERE id = ?").get(Number(id));
   if (!n) return null;
@@ -31,9 +42,12 @@ r.get("/", (req, res) => {
   const newsletters = db
     .prepare("SELECT id, id_public, gabarit, nom, statut, modifie_le, envoyee_le, contenu FROM newsletters ORDER BY modifie_le DESC")
     .all()
-    .map((n) => ({ ...n, objet: JSON.parse(n.contenu).meta?.objet || "", gabaritNom: nomGabarit(n.gabarit) }));
+    .map((n) => ({ ...n, objet: JSON.parse(n.contenu).meta?.objet || "", gabaritNom: nomGabarit(n.gabarit), quand: quandFr(n.modifie_le) }));
   const modeles = Object.entries(MODELES).map(([cle, m]) => ({ cle, nom: m.nom, description: m.description }));
-  res.render("newsletters", { newsletters, catalogue: CATALOGUE, modeles });
+  // Le brouillon modifié en dernier, mis en avant : c'est presque toujours
+  // celui qu'on vient de quitter.
+  const reprendre = newsletters.find((n) => n.statut === "brouillon") || null;
+  res.render("newsletters", { newsletters, catalogue: CATALOGUE, modeles, reprendre });
 });
 
 r.post("/newsletters", (req, res) => {
@@ -42,12 +56,12 @@ r.post("/newsletters", (req, res) => {
     const modele = MODELES[req.body.modele] ? String(req.body.modele) : "vierge";
     const info = db
       .prepare("INSERT INTO newsletters (id_public, gabarit, nom, contenu) VALUES (?, ?, ?, ?)")
-      .run(idPublic(), LIBRE, MODELES[modele].nom, JSON.stringify(contenuModele(modele)));
+      .run(idPublic(), LIBRE, nommer(MODELES[modele].nomCourt), JSON.stringify(contenuModele(modele)));
     return res.redirect(`/newsletters/${info.lastInsertRowid}`);
   }
   if (!CATALOGUE[cle]) return res.status(400).render("erreur", { code: 400, message: "Gabarit inconnu." });
   const g = gabarit(cle);
-  const nom = String(req.body.nom || "").trim() || g.nom;
+  const nom = String(req.body.nom || "").trim() || nommer(g.nom);
   const info = db
     .prepare("INSERT INTO newsletters (id_public, gabarit, nom, contenu) VALUES (?, ?, ?, ?)")
     .run(idPublic(), cle, nom, JSON.stringify(g.defaut));

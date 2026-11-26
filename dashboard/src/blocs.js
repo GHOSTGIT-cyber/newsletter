@@ -704,12 +704,14 @@ const bloc = (type, champs) => ({ ...blocVide(type), ...champs });
 export const MODELES = {
   vierge: {
     nom: "Page blanche",
+    nomCourt: "Newsletter",
     description: "Vous ajoutez vos blocs un par un.",
     meta: { objet: "", preheader: "" },
     blocs: () => [],
   },
   promotion: {
     nom: "Promotion (Black Friday, soldes…)",
+    nomCourt: "Promotion",
     description: "Bannière, code promo, produits en avant, bouton boutique.",
     meta: { objet: "Black Friday chez Lift Foils France", preheader: "[Votre offre en une ligne]" },
     blocs: () => [
@@ -753,6 +755,7 @@ export const MODELES = {
   },
   actualite: {
     nom: "Actualité / annonce",
+    nomCourt: "Actualité",
     description: "Photo, titre, texte, bouton, puis trois cartes.",
     meta: { objet: "", preheader: "" },
     blocs: () => [
