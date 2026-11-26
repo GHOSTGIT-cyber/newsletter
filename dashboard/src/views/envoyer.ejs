@@ -54,10 +54,23 @@
         </div>
 
         <div id="bloc-date" hidden>
-          <label>Date et heure (heure française)
-            <input type="datetime-local" name="quand_local" id="quand_local" value="<%= suggestion %>" min="<%= minimum %>">
-          </label>
-          <p class="discret" id="rappel-date">Jusqu'à cette heure, la newsletter reste programmée et vous pouvez annuler.</p>
+          <p class="libelle-date">Quand faut-il l'envoyer ?</p>
+          <div class="raccourcis" id="raccourcis">
+            <button type="button" data-demain="08:30">Demain 8h30</button>
+            <button type="button" data-demain="10:00">Demain 10h</button>
+            <button type="button" data-demain="18:00">Demain 18h</button>
+            <button type="button" data-heures="2">Dans 2 heures</button>
+          </div>
+          <div class="date-heure">
+            <label>Jour
+              <input type="date" name="jour" id="jour" value="<%= suggestionJour %>" min="<%= minimumJour %>">
+            </label>
+            <label>Heure
+              <input type="time" name="heure" id="heure" value="<%= suggestionHeure %>" step="300">
+            </label>
+          </div>
+          <p class="recap-date" id="recap-date"></p>
+          <p class="discret">Heure française. Vous pourrez annuler tant que rien n'est parti.</p>
         </div>
 
         <button type="submit" class="principal grand" id="bouton-envoi">Envoyer à <%= comptes.actif %> destinataire<%= comptes.actif > 1 ? 's' : '' %></button>
@@ -67,34 +80,94 @@
         (function () {
           const f = document.getElementById("formulaire-envoi");
           const bloc = document.getElementById("bloc-date");
-          const local = document.getElementById("quand_local");
+          const jour = document.getElementById("jour");
+          const heure = document.getElementById("heure");
+          const recap = document.getElementById("recap-date");
           const utc = document.getElementById("quand_utc");
           const bouton = document.getElementById("bouton-envoi");
           const nb = <%= comptes.actif %>;
           const mode = () => f.querySelector('input[name="mode"]:checked').value;
+          const pluriel = nb > 1 ? "s" : "";
 
-          function majuscule() {
+          const deuxChiffres = (x) => String(x).padStart(2, "0");
+          const enJour = (d) => d.getFullYear() + "-" + deuxChiffres(d.getMonth() + 1) + "-" + deuxChiffres(d.getDate());
+          const enHeure = (d) => deuxChiffres(d.getHours()) + ":" + deuxChiffres(d.getMinutes());
+
+          /** L'instant choisi, dans le fuseau du navigateur (celui d'Anna). */
+          function choisi() {
+            if (!jour.value || !heure.value) return null;
+            const d = new Date(jour.value + "T" + heure.value);
+            return isNaN(d) ? null : d;
+          }
+
+          const dire = (d) =>
+            d.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+
+          /** « dans 25 min », « dans 3 h », « demain », « dans 4 jours ». */
+          function delaiDit(d) {
+            const minutes = Math.round((d.getTime() - Date.now()) / 60000);
+            if (minutes < 60) return "dans " + minutes + " min";
+            const minuit = new Date();
+            minuit.setHours(0, 0, 0, 0);
+            const jours = Math.round((new Date(d).setHours(0, 0, 0, 0) - minuit) / 86400000);
+            if (jours === 0) return "dans " + Math.round(minutes / 60) + " h";
+            if (jours === 1) return "demain";
+            return "dans " + jours + " jours";
+          }
+
+          function rafraichir() {
             const programme = mode() === "programme";
             bloc.hidden = !programme;
-            bouton.textContent = programme
-              ? "Programmer l'envoi à " + nb + " destinataire" + (nb > 1 ? "s" : "")
-              : "Envoyer à " + nb + " destinataire" + (nb > 1 ? "s" : "");
+            bouton.textContent = (programme ? "Programmer l'envoi à " : "Envoyer à ") + nb + " destinataire" + pluriel;
+            if (!programme) return;
+            const d = choisi();
+            if (!d) {
+              recap.textContent = "Choisissez un jour et une heure.";
+              recap.className = "recap-date probleme";
+            } else if (d.getTime() < Date.now() + 60000) {
+              recap.textContent = "Cette heure est déjà passée.";
+              recap.className = "recap-date probleme";
+            } else {
+              recap.textContent = "Départ " + dire(d) + " (" + delaiDit(d) + ").";
+              recap.className = "recap-date";
+            }
           }
-          f.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener("change", majuscule));
-          majuscule();
+
+          f.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener("change", rafraichir));
+          jour.addEventListener("input", rafraichir);
+          heure.addEventListener("input", rafraichir);
+
+          document.getElementById("raccourcis").addEventListener("click", (e) => {
+            const b = e.target.closest("button");
+            if (!b) return;
+            const d = new Date();
+            if (b.dataset.demain) {
+              d.setDate(d.getDate() + 1);
+              const [h, m] = b.dataset.demain.split(":");
+              d.setHours(Number(h), Number(m), 0, 0);
+            } else {
+              // On garde les minutes : « dans 2 heures » doit vraiment faire 2 heures.
+              d.setHours(d.getHours() + Number(b.dataset.heures), d.getMinutes(), 0, 0);
+            }
+            jour.value = enJour(d);
+            heure.value = enHeure(d);
+            document.querySelectorAll("#raccourcis button").forEach((x) => x.classList.toggle("actif", x === b));
+            rafraichir();
+          });
+
+          rafraichir();
 
           f.addEventListener("submit", (e) => {
             if (mode() === "programme") {
-              // Le navigateur connaît le fuseau d'Anna : on envoie l'instant exact.
-              const d = new Date(local.value);
-              if (!local.value || isNaN(d)) { e.preventDefault(); local.focus(); return; }
+              const d = choisi();
+              if (!d) { e.preventDefault(); jour.focus(); return; }
               if (d.getTime() < Date.now() + 60000) { e.preventDefault(); alert("Choisissez une heure à venir."); return; }
+              // Le navigateur connaît le fuseau d'Anna : on envoie l'instant exact.
               utc.value = d.toISOString();
-              const quand = d.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
-              if (!confirm("Programmer l'envoi à " + nb + " destinataires pour " + quand + " ?")) e.preventDefault();
+              if (!confirm("Programmer l'envoi à " + nb + " destinataire" + pluriel + " pour " + dire(d) + " ?")) e.preventDefault();
               return;
             }
-            if (!confirm("Envoyer à " + nb + " destinataire" + (nb > 1 ? "s" : "") + " ? Cette action est irréversible.")) e.preventDefault();
+            if (!confirm("Envoyer à " + nb + " destinataire" + pluriel + " ? Cette action est irréversible.")) e.preventDefault();
           });
         })();
       </script>

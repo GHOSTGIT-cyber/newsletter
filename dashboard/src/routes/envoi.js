@@ -35,6 +35,7 @@ export function instantUTC({ quandUTC, quandLocal }) {
     if (!Number.isNaN(d.getTime())) return d;
   }
   if (!quandLocal || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(quandLocal)) return null;
+
   const naif = Date.parse(quandLocal.slice(0, 16) + ":00Z");
   if (Number.isNaN(naif)) return null;
   let t = naif - decalageParis(new Date(naif));
@@ -96,8 +97,9 @@ r.get("/newsletters/:id/envoyer", (req, res) => {
     configure: configure(),
     erreur: req.query.e || null,
     // Proposition par défaut : demain matin 8h30, heure française.
-    suggestion: pourChamp(new Date(Date.now() + 86400_000)).slice(0, 11) + "08:30",
-    minimum: pourChamp(new Date(Date.now() + 120_000)),
+    suggestionJour: pourChamp(new Date(Date.now() + 86400_000)).slice(0, 10),
+    suggestionHeure: "08:30",
+    minimumJour: pourChamp(new Date()).slice(0, 10),
   });
 });
 
@@ -118,7 +120,9 @@ r.post("/newsletters/:id/envoyer", (req, res) => {
   // Envoi différé : on vérifie que l'instant est bien à venir.
   let prevu = null;
   if (String(req.body.mode || "") === "programme") {
-    const d = instantUTC({ quandUTC: req.body.quand_utc, quandLocal: req.body.quand_local });
+    const { jour, heure } = req.body;
+    const quandLocal = jour && heure ? `${jour}T${heure}` : req.body.quand_local;
+    const d = instantUTC({ quandUTC: req.body.quand_utc, quandLocal });
     if (!d) {
       return res.redirect(`/newsletters/${n.id}/envoyer?e=` + encodeURIComponent("Date d'envoi illisible."));
     }
