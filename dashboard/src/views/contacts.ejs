@@ -47,23 +47,59 @@
 
   <!-- ── Onglets : un par envoi ─────────────────────────────────────── -->
   <nav class="onglets" aria-label="Listes d'envoi">
-    <a href="<%= lien({ liste: '' }) %>" class="onglet <%= !listeFiltre ? 'actif' : '' %>">
+    <a href="<%= lien({ liste: '' }) %>" class="onglet <%= !listeFiltre && !ongletAjout ? 'actif' : '' %>">
       <span class="titre">Tous</span><span class="effectif"><%= comptes.total %></span>
     </a>
     <% for (const l of listes) { %>
-      <a href="<%= lien({ liste: l.liste }) %>" class="onglet <%= listeFiltre === l.liste ? 'actif' : '' %> <%= l.complete ? 'envoye' : '' %>">
+      <a href="<%= lien({ liste: l.liste }) %>" class="onglet <%= listeFiltre === l.liste && !ongletAjout ? 'actif' : '' %> <%= l.complete ? 'envoye' : '' %>">
         <span class="titre"><%= l.liste %></span><span class="effectif"><%= l.actifs %></span>
         <span class="etat"><%= l.complete ? '✓ envoyé le ' + dateFr(l.dernier_envoi) : (l.dernier_envoi ? 'en cours : ' + l.recus + '/' + l.actifs : 'à envoyer') %></span>
       </a>
     <% } %>
     <% if (sansListe > 0) { %>
-    <a href="<%= lien({ liste: '__aucune' }) %>" class="onglet <%= listeFiltre === '__aucune' ? 'actif' : '' %>">
+    <a href="<%= lien({ liste: '__aucune' }) %>" class="onglet <%= listeFiltre === '__aucune' && !ongletAjout ? 'actif' : '' %>">
       <span class="titre">Sans liste</span><span class="effectif"><%= sansListe %></span>
     </a>
     <% } %>
+    <a href="/contacts?onglet=ajout<%= listeFiltre && listeFiltre !== '__aucune' ? '&liste=' + encodeURIComponent(listeFiltre) : '' %>" class="onglet onglet-ajout <%= ongletAjout ? 'actif' : '' %>">
+      <span class="titre">＋ Importer / ajouter</span>
+    </a>
   </nav>
 
   <section class="panneau-onglet">
+    <% if (ongletAjout) { %>
+    <div class="deux-colonnes">
+      <section>
+        <h2>Importer un fichier</h2>
+        <form method="post" action="/contacts/import" enctype="multipart/form-data">
+          <label>Fichier CSV ou TXT
+            <input type="file" name="fichier" accept=".csv,.txt,text/csv,text/plain" required>
+          </label>
+          <label>D'où viennent ces contacts ? (consentement)
+            <input type="text" name="source" placeholder="ex. inscription site, clients 2025" required>
+          </label>
+          <label>Date du consentement
+            <input type="date" name="date" value="<%= new Date().toISOString().slice(0,10) %>">
+          </label>
+          <label>Ranger dans la liste (facultatif)
+            <input type="text" name="liste" placeholder="ex. envoi 4" list="listes-connues" maxlength="60" value="<%= ongletCourant ? ongletCourant.liste : '' %>">
+            <datalist id="listes-connues"><% for (const l of listes) { %><option value="<%= l.liste %>"><% } %></datalist>
+          </label>
+          <button type="submit" class="principal">Importer</button>
+        </form>
+        <p class="discret">Une adresse par ligne, ou un CSV avec une colonne <code>email</code> (et <code>nom</code>, <code>prenom</code>, <code>liste</code> si besoin). Une adresse déjà connue n'est jamais dupliquée : elle change simplement de liste.</p>
+      </section>
+      <section>
+        <h2>Ajouter un contact</h2>
+        <form method="post" action="/contacts">
+          <label>Adresse email <input type="email" name="email" required></label>
+          <label>Nom (facultatif) <input type="text" name="nom"></label>
+          <label>Origine du consentement <input type="text" name="source" placeholder="ex. demandé par téléphone"></label>
+          <button type="submit" class="principal">Ajouter</button>
+        </form>
+      </section>
+    </div>
+    <% } else { %>
     <% if (ongletCourant) { %>
     <div class="resume-liste">
       <div>
@@ -129,43 +165,9 @@
     </table>
     <p class="discret" id="compte-visible"><%= contacts.length %> contact<%= contacts.length > 1 ? 's' : '' %> affiché<%= contacts.length > 1 ? 's' : '' %></p>
     <% } %>
+    <% } %>
   </section>
 
-  <!-- ── Ajouter des contacts, replié pour ne pas encombrer ───────────── -->
-  <details class="creation" <%= rapport ? 'open' : '' %>>
-    <summary>+ Importer ou ajouter des contacts</summary>
-    <div class="deux-colonnes" style="padding:18px">
-      <section>
-        <h2>Importer un fichier</h2>
-        <form method="post" action="/contacts/import" enctype="multipart/form-data">
-          <label>Fichier CSV ou TXT
-            <input type="file" name="fichier" accept=".csv,.txt,text/csv,text/plain" required>
-          </label>
-          <label>D'où viennent ces contacts ? (consentement)
-            <input type="text" name="source" placeholder="ex. inscription site, clients 2025" required>
-          </label>
-          <label>Date du consentement
-            <input type="date" name="date" value="<%= new Date().toISOString().slice(0,10) %>">
-          </label>
-          <label>Ranger dans la liste (facultatif)
-            <input type="text" name="liste" placeholder="ex. envoi 4" list="listes-connues" maxlength="60" value="<%= ongletCourant ? ongletCourant.liste : '' %>">
-            <datalist id="listes-connues"><% for (const l of listes) { %><option value="<%= l.liste %>"><% } %></datalist>
-          </label>
-          <button type="submit" class="principal">Importer</button>
-        </form>
-        <p class="discret">Une adresse par ligne, ou un CSV avec une colonne <code>email</code> (et <code>nom</code>, <code>prenom</code>, <code>liste</code> si besoin). Une adresse déjà connue n'est jamais dupliquée : elle change simplement de liste.</p>
-      </section>
-      <section>
-        <h2>Ajouter un contact</h2>
-        <form method="post" action="/contacts">
-          <label>Adresse email <input type="email" name="email" required></label>
-          <label>Nom (facultatif) <input type="text" name="nom"></label>
-          <label>Origine du consentement <input type="text" name="source" placeholder="ex. demandé par téléphone"></label>
-          <button type="submit" class="principal">Ajouter</button>
-        </form>
-      </section>
-    </div>
-  </details>
 </main>
 
 <script>

@@ -430,3 +430,7 @@ body.editeur { background: var(--gris-clair); }
 .deplacer { margin: 0; }
 .deplacer select { width: auto; margin: 0; padding: 4px 6px; font-size: 13px; }
 #compte-visible { font-size: 13px; margin: 10px 0 0; }
+.onglet-ajout { margin-left: auto; }
+.onglet-ajout .titre { color: var(--accent); }
+.onglet-ajout.actif .titre { color: var(--encre); }
+.panneau-onglet .deux-colonnes h2 { font-size: 17px; }
