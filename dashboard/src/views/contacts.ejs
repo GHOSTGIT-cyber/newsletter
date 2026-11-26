@@ -1,8 +1,26 @@
 <%- include('_entete', { titre: 'Contacts' }) %>
+<%
+  const dateFr = (s) => s ? new Date(String(s).replace(' ', 'T') + (String(s).includes('Z') ? '' : 'Z')).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', day: 'numeric', month: 'long' }) : '';
+  const lien = (o) => {
+    const q = new URLSearchParams();
+    const liste = o.liste !== undefined ? o.liste : listeFiltre;
+    const statut = o.statut !== undefined ? o.statut : filtre;
+    if (liste) q.set('liste', liste);
+    if (statut) q.set('statut', statut);
+    const s = q.toString();
+    return '/contacts' + (s ? '?' + s : '');
+  };
+  const ongletCourant = listes.find((l) => l.liste === listeFiltre);
+%>
 <main class="page">
   <div class="entete-page">
-    <h1>Contacts</h1>
-    <a href="/contacts/export" class="bouton">Exporter en CSV</a>
+    <div>
+      <h1>Contacts</h1>
+      <p class="discret"><%= comptes.actif %> actifs sur <%= comptes.total %> · <%= comptes.desabonne %> désabonné<%= comptes.desabonne > 1 ? 's' : '' %><%= comptes.rebond ? ' · ' + comptes.rebond + ' rebond(s)' : '' %><%= comptes.plainte ? ' · ' + comptes.plainte + ' plainte(s)' : '' %></p>
+    </div>
+    <div class="en-ligne">
+      <a href="/contacts/export" class="bouton">Exporter en CSV</a>
+    </div>
   </div>
 
   <% if (message) { %><p class="succes"><%= message %></p><% } %>
@@ -27,97 +45,146 @@
   </section>
   <% } %>
 
-  <div class="compteurs">
-    <a href="/contacts" class="compteur <%= filtre === '' ? 'actif' : '' %>"><span class="n"><%= comptes.total %></span> au total</a>
-    <a href="/contacts?statut=actif" class="compteur <%= filtre === 'actif' ? 'actif' : '' %>"><span class="n"><%= comptes.actif %></span> actifs</a>
-    <a href="/contacts?statut=desabonne" class="compteur <%= filtre === 'desabonne' ? 'actif' : '' %>"><span class="n"><%= comptes.desabonne %></span> désabonnés</a>
-    <a href="/contacts?statut=rebond" class="compteur <%= filtre === 'rebond' ? 'actif' : '' %>"><span class="n"><%= comptes.rebond %></span> rebonds</a>
-    <a href="/contacts?statut=plainte" class="compteur <%= filtre === 'plainte' ? 'actif' : '' %>"><span class="n"><%= comptes.plainte %></span> plaintes</a>
-  </div>
-
-  <% if (listes.length) { %>
-  <h2>Listes d'envoi</h2>
-  <div class="puces-listes">
-    <a href="/contacts" class="puce <%= listeFiltre ? '' : 'actif' %>">Toutes</a>
+  <!-- ── Onglets : un par envoi ─────────────────────────────────────── -->
+  <nav class="onglets" aria-label="Listes d'envoi">
+    <a href="<%= lien({ liste: '' }) %>" class="onglet <%= !listeFiltre ? 'actif' : '' %>">
+      <span class="titre">Tous</span><span class="effectif"><%= comptes.total %></span>
+    </a>
     <% for (const l of listes) { %>
-      <a href="/contacts?liste=<%= encodeURIComponent(l.liste) %>" class="puce <%= listeFiltre === l.liste ? 'actif' : '' %>"><%= l.complete ? '✗ ' : '' %><%= l.liste %> <span class="n"><%= l.actifs %> actifs · <%= !l.dernier_envoi ? 'jamais envoyée' : (l.complete ? 'envoyée' : 'en partie (' + l.recus + '/' + l.actifs + ')') + ' le ' + new Date(l.dernier_envoi.replace(' ', 'T') + 'Z').toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' }) + ' — ' + l.derniere_newsletter %></span></a>
-      <% if (listeFiltre === l.liste) { %>
-      <form method="post" action="/contacts/listes/retirer" class="retirer-liste"
-            onsubmit="return confirm('Retirer l'étiquette « <%= l.liste %> » ? Les contacts sont conservés, ils ne seront simplement plus rangés dans cette liste.')">
-        <input type="hidden" name="liste" value="<%= l.liste %>">
+      <a href="<%= lien({ liste: l.liste }) %>" class="onglet <%= listeFiltre === l.liste ? 'actif' : '' %> <%= l.complete ? 'envoye' : '' %>">
+        <span class="titre"><%= l.liste %></span><span class="effectif"><%= l.actifs %></span>
+        <span class="etat"><%= l.complete ? '✓ envoyé le ' + dateFr(l.dernier_envoi) : (l.dernier_envoi ? 'en cours : ' + l.recus + '/' + l.actifs : 'à envoyer') %></span>
+      </a>
+    <% } %>
+    <% if (sansListe > 0) { %>
+    <a href="<%= lien({ liste: '__aucune' }) %>" class="onglet <%= listeFiltre === '__aucune' ? 'actif' : '' %>">
+      <span class="titre">Sans liste</span><span class="effectif"><%= sansListe %></span>
+    </a>
+    <% } %>
+  </nav>
+
+  <section class="panneau-onglet">
+    <% if (ongletCourant) { %>
+    <div class="resume-liste">
+      <div>
+        <h2><%= ongletCourant.liste %></h2>
+        <p>
+          <strong><%= ongletCourant.actifs %></strong> contact<%= ongletCourant.actifs > 1 ? 's' : '' %> actif<%= ongletCourant.actifs > 1 ? 's' : '' %>
+          <% if (ongletCourant.complete) { %>
+            · <span class="pastille-ok">✓ Envoyé le <%= dateFr(ongletCourant.dernier_envoi) %></span> <span class="discret">« <%= ongletCourant.derniere_newsletter %> »</span>
+          <% } else if (ongletCourant.dernier_envoi) { %>
+            · <span class="pastille-partiel">En cours : <%= ongletCourant.recus %> / <%= ongletCourant.actifs %> reçus</span> <span class="discret">« <%= ongletCourant.derniere_newsletter %> »</span>
+          <% } else { %>
+            · <span class="pastille-attente">Pas encore envoyé</span>
+          <% } %>
+        </p>
+      </div>
+      <form method="post" action="/contacts/listes/retirer"
+            onsubmit="return confirm('Retirer l’étiquette « <%= ongletCourant.liste %> » ? Les contacts sont conservés, ils ne seront simplement plus rangés dans cette liste.')">
+        <input type="hidden" name="liste" value="<%= ongletCourant.liste %>">
         <button class="lien danger">Retirer cette liste</button>
       </form>
+    </div>
+    <% } %>
+
+    <div class="barre-outils">
+      <input type="search" id="recherche" placeholder="Rechercher une adresse ou un nom…" autocomplete="off" aria-label="Rechercher">
+      <div class="filtres-statut">
+        <a href="<%= lien({ statut: '' }) %>" class="<%= !filtre ? 'actif' : '' %>">Tous</a>
+        <% for (const [cle, nom] of Object.entries(STATUTS)) { %>
+          <a href="<%= lien({ statut: cle }) %>" class="<%= filtre === cle ? 'actif' : '' %>"><%= nom %>s</a>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (contacts.length === 0) { %>
+      <p class="vide">Aucun contact ici.</p>
+    <% } else { %>
+    <table class="tableau" id="table-contacts">
+      <thead><tr><th>Email</th><th>Nom</th><th>Liste</th><th>Statut</th><th>Ajouté le</th><th></th></tr></thead>
+      <tbody>
+      <% for (const c of contacts) { %>
+        <tr data-recherche="<%= (c.email + ' ' + (c.nom || '')).toLowerCase() %>">
+          <td class="fort"><%= c.email %></td>
+          <td class="discret"><%= c.nom || '—' %></td>
+          <td>
+            <form method="post" action="/contacts/<%= c.id %>/liste" class="deplacer">
+              <select name="liste" aria-label="Liste de <%= c.email %>" onchange="this.form.submit()">
+                <option value="" <%= !c.liste ? 'selected' : '' %>>— aucune —</option>
+                <% for (const l of listes) { %><option value="<%= l.liste %>" <%= c.liste === l.liste ? 'selected' : '' %>><%= l.liste %></option><% } %>
+              </select>
+            </form>
+          </td>
+          <td><span class="statut statut-<%= c.statut %>"><%= STATUTS[c.statut] %></span></td>
+          <td class="discret"><%= dateFr(c.cree_le) %></td>
+          <td class="actions">
+            <% if (c.statut === 'actif') { %>
+            <form method="post" action="/contacts/<%= c.id %>/desabonner"><button class="lien">Désabonner</button></form>
+            <% } %>
+            <form method="post" action="/contacts/<%= c.id %>/supprimer" onsubmit="return confirm('Supprimer définitivement ce contact ? Son lien de désabonnement cessera de fonctionner. Pour le retirer, préférez « Désabonner ».')"><button class="lien danger">Supprimer</button></form>
+          </td>
+        </tr>
       <% } %>
+      </tbody>
+    </table>
+    <p class="discret" id="compte-visible"><%= contacts.length %> contact<%= contacts.length > 1 ? 's' : '' %> affiché<%= contacts.length > 1 ? 's' : '' %></p>
     <% } %>
-  </div>
-  <% } %>
+  </section>
 
-  <div class="deux-colonnes">
-    <section class="carte">
-      <h2>Importer une liste</h2>
-      <form method="post" action="/contacts/import" enctype="multipart/form-data">
-        <label>Fichier CSV ou TXT
-          <input type="file" name="fichier" accept=".csv,.txt,text/csv,text/plain" required>
-        </label>
-        <label>D'où viennent ces contacts ? (consentement)
-          <input type="text" name="source" placeholder="ex. inscription site, clients 2025" required>
-        </label>
-        <label>Date du consentement
-          <input type="date" name="date" value="<%= new Date().toISOString().slice(0,10) %>">
-        </label>
-        <label>Ranger dans la liste (facultatif)
-          <input type="text" name="liste" placeholder="ex. envoi 1" list="listes-connues" maxlength="60">
-          <datalist id="listes-connues"><% for (const l of listes) { %><option value="<%= l.liste %>"><% } %></datalist>
-        </label>
-        <button type="submit" class="principal">Importer</button>
-      </form>
-      <p class="discret">Une adresse par ligne, ou un CSV avec une colonne <code>email</code>. Les colonnes <code>nom</code>, <code>prenom</code> et <code>liste</code> sont reprises si elles existent. Une adresse déjà connue n'est jamais dupliquée : elle change simplement de liste.</p>
-    </section>
-
-    <section class="carte">
-      <h2>Ajouter un contact</h2>
-      <form method="post" action="/contacts">
-        <label>Adresse email <input type="email" name="email" required></label>
-        <label>Nom (facultatif) <input type="text" name="nom"></label>
-        <label>Origine du consentement <input type="text" name="source" placeholder="ex. demandé par téléphone"></label>
-        <button type="submit" class="principal">Ajouter</button>
-      </form>
-    </section>
-  </div>
-
-  <h2>Liste<%= filtre ? ' — ' + STATUTS[filtre].toLowerCase() + 's' : '' %><%= listeFiltre ? ' — « ' + listeFiltre + ' »' : '' %></h2>
-  <% if (contacts.length === 0) { %>
-    <p class="vide">Aucun contact<%= filtre ? ' dans cette catégorie' : '' %>.</p>
-  <% } else { %>
-  <table class="tableau">
-    <thead><tr><th>Email</th><th>Nom</th><th>Liste</th><th>Statut</th><th>Depuis</th><th>Consentement</th><th></th></tr></thead>
-    <tbody>
-    <% let groupe = null;
-       const effectifs = {};
-       for (const c of contacts) { const k = c.liste || ''; effectifs[k] = (effectifs[k] || 0) + 1; }
-       for (const c of contacts) {
-         const k = c.liste || '';
-         if (k !== groupe) { groupe = k; %>
-      <tr class="groupe-liste"><td colspan="7"><%= k || 'Sans liste' %> <span class="discret">· <%= effectifs[k] %> contact<%= effectifs[k] > 1 ? 's' : '' %></span></td></tr>
-    <% } %>
-      <tr>
-        <td class="fort"><%= c.email %></td>
-        <td class="discret"><%= c.nom || '—' %></td>
-        <td class="discret"><%= c.liste || '—' %></td>
-        <td><span class="statut statut-<%= c.statut %>"><%= STATUTS[c.statut] %></span>
-          <% if (c.statut_origine) { %><span class="discret"> · <%= c.statut_origine %></span><% } %></td>
-        <td class="discret"><%= (c.statut_date || '').slice(0, 10) %></td>
-        <td class="discret"><%= c.consentement_source || '—' %><%= c.consentement_date ? ' · ' + c.consentement_date : '' %></td>
-        <td class="actions">
-          <% if (c.statut === 'actif') { %>
-          <form method="post" action="/contacts/<%= c.id %>/desabonner"><button class="lien">Désabonner</button></form>
-          <% } %>
-          <form method="post" action="/contacts/<%= c.id %>/supprimer" onsubmit="return confirm('Supprimer définitivement ce contact ? Son lien de désabonnement cessera de fonctionner. Pour le retirer de la liste, préférez « Désabonner ».')"><button class="lien danger">Supprimer</button></form>
-        </td>
-      </tr>
-    <% } %>
-    </tbody>
-  </table>
-  <% } %>
+  <!-- ── Ajouter des contacts, replié pour ne pas encombrer ───────────── -->
+  <details class="creation" <%= rapport ? 'open' : '' %>>
+    <summary>+ Importer ou ajouter des contacts</summary>
+    <div class="deux-colonnes" style="padding:18px">
+      <section>
+        <h2>Importer un fichier</h2>
+        <form method="post" action="/contacts/import" enctype="multipart/form-data">
+          <label>Fichier CSV ou TXT
+            <input type="file" name="fichier" accept=".csv,.txt,text/csv,text/plain" required>
+          </label>
+          <label>D'où viennent ces contacts ? (consentement)
+            <input type="text" name="source" placeholder="ex. inscription site, clients 2025" required>
+          </label>
+          <label>Date du consentement
+            <input type="date" name="date" value="<%= new Date().toISOString().slice(0,10) %>">
+          </label>
+          <label>Ranger dans la liste (facultatif)
+            <input type="text" name="liste" placeholder="ex. envoi 4" list="listes-connues" maxlength="60" value="<%= ongletCourant ? ongletCourant.liste : '' %>">
+            <datalist id="listes-connues"><% for (const l of listes) { %><option value="<%= l.liste %>"><% } %></datalist>
+          </label>
+          <button type="submit" class="principal">Importer</button>
+        </form>
+        <p class="discret">Une adresse par ligne, ou un CSV avec une colonne <code>email</code> (et <code>nom</code>, <code>prenom</code>, <code>liste</code> si besoin). Une adresse déjà connue n'est jamais dupliquée : elle change simplement de liste.</p>
+      </section>
+      <section>
+        <h2>Ajouter un contact</h2>
+        <form method="post" action="/contacts">
+          <label>Adresse email <input type="email" name="email" required></label>
+          <label>Nom (facultatif) <input type="text" name="nom"></label>
+          <label>Origine du consentement <input type="text" name="source" placeholder="ex. demandé par téléphone"></label>
+          <button type="submit" class="principal">Ajouter</button>
+        </form>
+      </section>
+    </div>
+  </details>
 </main>
+
+<script>
+  // Recherche instantanée dans l'onglet affiché.
+  (function () {
+    const champ = document.getElementById("recherche");
+    const lignes = [...document.querySelectorAll("#table-contacts tbody tr")];
+    const compte = document.getElementById("compte-visible");
+    if (!champ || !lignes.length) return;
+    champ.addEventListener("input", () => {
+      const q = champ.value.trim().toLowerCase();
+      let n = 0;
+      for (const tr of lignes) {
+        const ok = !q || tr.dataset.recherche.includes(q);
+        tr.hidden = !ok;
+        if (ok) n++;
+      }
+      compte.textContent = n + " contact" + (n > 1 ? "s" : "") + " affiché" + (n > 1 ? "s" : "");
+    });
+  })();
+</script>
 <%- include('_pied') %>

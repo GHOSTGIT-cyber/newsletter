@@ -39,7 +39,8 @@ r.get("/contacts", (req, res) => {
   const ou = [];
   const args = [];
   if (STATUTS[filtre]) { ou.push("statut = ?"); args.push(filtre); }
-  if (liste) { ou.push("liste = ?"); args.push(liste); }
+  if (liste === "__aucune") ou.push("(liste IS NULL OR liste = '')");
+  else if (liste) { ou.push("liste = ?"); args.push(liste); }
   const contacts = db
     .prepare(`SELECT * FROM contacts ${ou.length ? "WHERE " + ou.join(" AND ") : ""} ORDER BY (liste IS NULL OR liste = ''), liste COLLATE NOCASE, email`)
     .all(...args);
@@ -48,6 +49,7 @@ r.get("/contacts", (req, res) => {
     comptes: compteParStatut(),
     listes: listes(),
     listeFiltre: liste,
+    sansListe: db.prepare("SELECT COUNT(*) AS n FROM contacts WHERE liste IS NULL OR liste = ''").get().n,
     filtre,
     STATUTS,
     rapport: null,
@@ -76,12 +78,20 @@ r.post("/contacts/import", async (req, res) => {
     comptes: compteParStatut(),
     listes: listes(),
     listeFiltre: "",
+    sansListe: db.prepare("SELECT COUNT(*) AS n FROM contacts WHERE liste IS NULL OR liste = ''").get().n,
     filtre: "",
     STATUTS,
     rapport,
     message: null,
     erreur: null,
   });
+});
+
+// Change un contact de liste (menu déroulant du tableau).
+r.post("/contacts/:id/liste", (req, res) => {
+  const nom = String(req.body.liste || "").trim().slice(0, 60);
+  db.prepare("UPDATE contacts SET liste = ? WHERE id = ?").run(nom || null, Number(req.params.id));
+  res.redirect(req.get("referer") || "/contacts");
 });
 
 // Retire l'étiquette d'une liste. Les contacts restent, seul le rangement

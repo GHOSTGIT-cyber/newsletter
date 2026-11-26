@@ -399,3 +399,34 @@ body.editeur { background: var(--gris-clair); }
 .carte-liste.faite.actif { background: #555; border-color: #555; color: #fff; }
 .tableau tr.groupe-liste td { background: var(--encre); color: var(--blanc); font-weight: 700; font-size: 14px; padding: 9px 14px; }
 .tableau tr.groupe-liste .discret { color: rgba(255,255,255,.65); font-weight: 400; }
+
+/* ── Contacts : onglets par envoi ────────────────────────────────────── */
+.onglets { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 2px solid #ddd; margin-bottom: 0; }
+.onglet { display: grid; grid-template-columns: auto auto; column-gap: 8px; align-items: baseline;
+  padding: 12px 18px 10px; text-decoration: none; color: var(--gris); border: 2px solid transparent;
+  border-bottom: 0; border-radius: 8px 8px 0 0; margin-bottom: -2px; background: transparent; }
+.onglet:hover { color: var(--encre); background: rgba(0,0,0,.03); }
+.onglet .titre { font-weight: 700; font-size: 15px; }
+.onglet .effectif { font-size: 12px; background: #e8e8e8; color: var(--encre); padding: 1px 8px; border-radius: 10px; }
+.onglet .etat { grid-column: 1 / -1; font-size: 11px; margin-top: 2px; color: #8a6d00; }
+.onglet.envoye .etat { color: var(--ok); }
+.onglet.actif { background: var(--blanc); color: var(--encre); border-color: #ddd; border-bottom: 2px solid var(--blanc); }
+.onglet.actif .effectif { background: var(--accent); color: #000; }
+.panneau-onglet { background: var(--blanc); border-radius: 0 8px 8px 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 24px; }
+.panneau-onglet .tableau { box-shadow: none; border: 1px solid #eee; }
+.resume-liste { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;
+  padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #eee; }
+.resume-liste h2 { font-size: 20px; margin: 0 0 4px; }
+.resume-liste p { margin: 0; }
+.pastille-ok, .pastille-partiel, .pastille-attente { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 12px; }
+.pastille-ok { background: #e6f4ea; color: var(--ok); }
+.pastille-partiel { background: #fff4d6; color: #8a6d00; }
+.pastille-attente { background: #e3f6f5; color: #0c5e5b; }
+.barre-outils { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 14px; }
+.barre-outils input[type="search"] { flex: 1; min-width: 240px; max-width: 420px; font: inherit; padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px; }
+.filtres-statut { display: flex; gap: 4px; flex-wrap: wrap; }
+.filtres-statut a { font-size: 13px; padding: 6px 12px; border-radius: 16px; text-decoration: none; color: var(--gris); border: 1px solid #ddd; }
+.filtres-statut a.actif { background: var(--encre); color: var(--blanc); border-color: var(--encre); }
+.deplacer { margin: 0; }
+.deplacer select { width: auto; margin: 0; padding: 4px 6px; font-size: 13px; }
+#compte-visible { font-size: 13px; margin: 10px 0 0; }

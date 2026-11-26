@@ -92,14 +92,23 @@ export function listes() {
     .all();
   // Dernière newsletter partie vers cette liste, et combien de ses contacts
   // l'ont reçue : une liste n'est « envoyée » que si elle l'a reçue en entier.
+  // L'état de chaque liste se rapporte à la campagne la plus récente, toutes
+  // listes confondues : une vieille newsletter de test reçue par une seule
+  // adresse ne doit pas faire croire qu'une liste a été entamée.
+  const recente = db
+    .prepare(
+      `SELECT newsletter_id AS id FROM envois WHERE statut IN ('envoye','livre','attente')
+       ORDER BY COALESCE(envoye_le, cree_le) DESC LIMIT 1`
+    )
+    .get();
   const derniere = db.prepare(
     `SELECT n.id, n.nom, MAX(e.envoye_le) AS quand, COUNT(DISTINCT e.contact_id) AS recus
      FROM envois e JOIN contacts c ON c.id = e.contact_id JOIN newsletters n ON n.id = e.newsletter_id
-     WHERE c.liste = ? AND e.statut IN ('envoye','livre')
-     GROUP BY n.id ORDER BY quand DESC LIMIT 1`
+     WHERE c.liste = ? AND e.newsletter_id = ? AND e.statut IN ('envoye','livre')
+     GROUP BY n.id`
   );
   return base.map((l) => {
-    const d = derniere.get(l.liste);
+    const d = recente ? derniere.get(l.liste, recente.id) : null;
     return { ...l, derniere_newsletter: d?.nom || null, dernier_envoi: d?.quand || null, recus: d?.recus || 0, complete: !!d && d.recus >= l.actifs };
   });
 }
