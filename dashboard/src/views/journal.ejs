@@ -11,6 +11,20 @@
     </div>
   </div>
 
+  <% if (n.statut === 'programmee' && quandPrevu) { %>
+  <section class="programmee">
+    <div>
+      <span class="etiquette">Envoi programmé</span>
+      <span class="quand"><%= quandPrevu %></span>
+      <span class="discret">Rien ne part avant cette heure. Vous pouvez encore tout annuler et corriger.</span>
+    </div>
+    <form method="post" action="/newsletters/<%= n.id %>/annuler-programmation"
+          onsubmit="return confirm('Annuler l\'envoi programmé ? La newsletter redeviendra modifiable.')">
+      <button class="bouton">Annuler l'envoi programmé</button>
+    </form>
+  </section>
+  <% } %>
+
   <div class="compteurs" id="compteurs">
     <span class="compteur"><span class="n" data-p="total"><%= p.total %></span> au total</span>
     <span class="compteur"><span class="n" data-p="livre"><%= p.livre %></span> livrés</span>

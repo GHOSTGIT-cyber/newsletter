@@ -42,11 +42,62 @@
         <li>Avez-vous reçu un test sur votre propre boîte<%= emailTest ? ' (' + emailTest + ')' : '' %> ?</li>
         <li>Une fois partie, la newsletter passe en lecture seule et ne peut plus être corrigée.</li>
       </ul>
-      <form method="post" action="/newsletters/<%= n.id %>/envoyer"
-            onsubmit="return confirm('Envoyer à <%= comptes.actif %> destinataire<%= comptes.actif > 1 ? 's' : '' %> ? Cette action est irréversible.')">
+      <form method="post" action="/newsletters/<%= n.id %>/envoyer" id="formulaire-envoi">
         <input type="hidden" name="confirmation" value="<%= comptes.actif %>">
-        <button type="submit" class="principal grand">Envoyer à <%= comptes.actif %> destinataire<%= comptes.actif > 1 ? 's' : '' %></button>
+        <input type="hidden" name="quand_utc" id="quand_utc">
+
+        <div class="choix-envoi">
+          <label class="option"><input type="radio" name="mode" value="maintenant" checked>
+            <span><span class="fort">Envoyer maintenant</span><span class="discret">Le départ commence dans la minute.</span></span></label>
+          <label class="option"><input type="radio" name="mode" value="programme">
+            <span><span class="fort">Programmer l'envoi</span><span class="discret">La newsletter part toute seule à l'heure choisie, même si personne n'est devant l'écran.</span></span></label>
+        </div>
+
+        <div id="bloc-date" hidden>
+          <label>Date et heure (heure française)
+            <input type="datetime-local" name="quand_local" id="quand_local" value="<%= suggestion %>" min="<%= minimum %>">
+          </label>
+          <p class="discret" id="rappel-date">Jusqu'à cette heure, la newsletter reste programmée et vous pouvez annuler.</p>
+        </div>
+
+        <button type="submit" class="principal grand" id="bouton-envoi">Envoyer à <%= comptes.actif %> destinataire<%= comptes.actif > 1 ? 's' : '' %></button>
       </form>
+
+      <script>
+        (function () {
+          const f = document.getElementById("formulaire-envoi");
+          const bloc = document.getElementById("bloc-date");
+          const local = document.getElementById("quand_local");
+          const utc = document.getElementById("quand_utc");
+          const bouton = document.getElementById("bouton-envoi");
+          const nb = <%= comptes.actif %>;
+          const mode = () => f.querySelector('input[name="mode"]:checked').value;
+
+          function majuscule() {
+            const programme = mode() === "programme";
+            bloc.hidden = !programme;
+            bouton.textContent = programme
+              ? "Programmer l'envoi à " + nb + " destinataire" + (nb > 1 ? "s" : "")
+              : "Envoyer à " + nb + " destinataire" + (nb > 1 ? "s" : "");
+          }
+          f.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener("change", majuscule));
+          majuscule();
+
+          f.addEventListener("submit", (e) => {
+            if (mode() === "programme") {
+              // Le navigateur connaît le fuseau d'Anna : on envoie l'instant exact.
+              const d = new Date(local.value);
+              if (!local.value || isNaN(d)) { e.preventDefault(); local.focus(); return; }
+              if (d.getTime() < Date.now() + 60000) { e.preventDefault(); alert("Choisissez une heure à venir."); return; }
+              utc.value = d.toISOString();
+              const quand = d.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+              if (!confirm("Programmer l'envoi à " + nb + " destinataires pour " + quand + " ?")) e.preventDefault();
+              return;
+            }
+            if (!confirm("Envoyer à " + nb + " destinataire" + (nb > 1 ? "s" : "") + " ? Cette action est irréversible.")) e.preventDefault();
+          });
+        })();
+      </script>
     </section>
   <% } %>
 </main>

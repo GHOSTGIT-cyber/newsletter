@@ -76,6 +76,8 @@ const MIGRATIONS = [
     brut       TEXT NOT NULL
   );
   `,
+  // Envoi différé : instant UTC auquel la campagne doit partir (NULL = tout de suite).
+  `ALTER TABLE newsletters ADD COLUMN envoi_prevu TEXT;`,
 ];
 
 db.exec(`CREATE TABLE IF NOT EXISTS migrations (version INTEGER PRIMARY KEY, appliquee_le TEXT NOT NULL DEFAULT (datetime('now')))`);

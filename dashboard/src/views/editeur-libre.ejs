@@ -19,7 +19,11 @@
 </div>
 
 <% if (lectureSeule) { %>
+<% if (n.statut === 'programmee') { %>
+<p class="bandeau-info">Envoi programmé : la newsletter n'est plus modifiable. <a href="/newsletters/<%= n.id %>/journal">Annuler l'envoi programmé</a> pour la corriger.</p>
+<% } else { %>
 <p class="bandeau-info">Cette newsletter a été envoyée<%= n.envoyee_le ? ' le ' + n.envoyee_le.slice(0, 10) : '' %> : elle n'est plus modifiable. Dupliquez-la pour la réutiliser.</p>
+<% } %>
 <% } %>
 
 <div class="editeur-libre <%= lectureSeule ? 'lecture-seule' : '' %>">

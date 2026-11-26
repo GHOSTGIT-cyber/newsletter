@@ -92,8 +92,12 @@ export function envoyesAujourdhui() {
 
 export const budgetDuJour = () => Math.max(0, plafondQuotidien() - envoyesAujourdhui());
 
-/** Crée une ligne d'envoi par contact actif. Ne double jamais un envoi déjà fait. */
-export function preparerCampagne(newsletterId) {
+/**
+ * Crée une ligne d'envoi par contact actif. Ne double jamais un envoi déjà fait.
+ * `envoiPrevu` (instant UTC « YYYY-MM-DD HH:MM:SS ») diffère le départ : la file
+ * est constituée tout de suite, mais rien ne part avant l'heure dite.
+ */
+export function preparerCampagne(newsletterId, envoiPrevu = null) {
   const existants = db
     .prepare("SELECT COUNT(*) AS n FROM envois WHERE newsletter_id = ?")
     .get(newsletterId).n;
@@ -106,13 +110,40 @@ export function preparerCampagne(newsletterId) {
   db.exec("BEGIN");
   try {
     for (const c of liste) inserer.run(newsletterId, c.id, c.email);
-    db.prepare("UPDATE newsletters SET statut = 'envoi' WHERE id = ?").run(newsletterId);
+    db.prepare("UPDATE newsletters SET statut = ?, envoi_prevu = ? WHERE id = ?").run(
+      envoiPrevu ? "programmee" : "envoi",
+      envoiPrevu,
+      newsletterId
+    );
     db.exec("COMMIT");
   } catch (e) {
     db.exec("ROLLBACK");
     throw e;
   }
   return { deja: 0, crees: liste.length };
+}
+
+/**
+ * Annule une programmation : la file est vidée et la newsletter redevient un
+ * brouillon modifiable. Refusé dès qu'un email est parti.
+ */
+export function annulerProgrammation(newsletterId) {
+  const n = db.prepare("SELECT statut FROM newsletters WHERE id = ?").get(newsletterId);
+  if (!n || n.statut !== "programmee") return { ok: false, erreur: "Cette newsletter n'est pas programmée." };
+  const partis = db
+    .prepare("SELECT COUNT(*) AS n FROM envois WHERE newsletter_id = ? AND statut <> 'attente'")
+    .get(newsletterId).n;
+  if (partis > 0) return { ok: false, erreur: "Des emails sont déjà partis : l'envoi ne peut plus être annulé." };
+  db.exec("BEGIN");
+  try {
+    db.prepare("DELETE FROM envois WHERE newsletter_id = ? AND statut = 'attente'").run(newsletterId);
+    db.prepare("UPDATE newsletters SET statut = 'brouillon', envoi_prevu = NULL WHERE id = ?").run(newsletterId);
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
+  return { ok: true };
 }
 
 export function progression(newsletterId) {
@@ -141,12 +172,16 @@ export async function tick() {
   if (enCours || !configure()) return;
   enCours = true;
   try {
+    // L'heure prévue est passée : la campagne entre en envoi.
+    db.exec("UPDATE newsletters SET statut = 'envoi' WHERE statut = 'programmee' AND envoi_prevu <= datetime('now')");
     while (budgetDuJour() > 0) {
       const envoi = db
         .prepare(
           `SELECT e.*, n.id AS nid, n.gabarit, n.contenu, n.id_public, n.nom
            FROM envois e JOIN newsletters n ON n.id = e.newsletter_id
-           WHERE e.statut = 'attente' ORDER BY e.id LIMIT 1`
+           WHERE e.statut = 'attente'
+             AND (n.envoi_prevu IS NULL OR n.envoi_prevu <= datetime('now'))
+           ORDER BY e.id LIMIT 1`
         )
         .get();
       if (!envoi) break;

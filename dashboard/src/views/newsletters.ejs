@@ -24,7 +24,7 @@
         <td><a href="/newsletters/<%= n.id %>" class="fort"><%= n.nom %></a></td>
         <td class="discret"><%= n.objet %></td>
         <td class="discret"><%= n.gabaritNom %></td>
-        <td><span class="statut statut-<%= n.statut %>"><%= n.statut === 'brouillon' ? 'Brouillon' : n.statut === 'envoi' ? 'Envoi en cours' : 'Envoyée' %></span></td>
+        <td><span class="statut statut-<%= n.statut %>"><%= n.statut === 'brouillon' ? 'Brouillon' : n.statut === 'programmee' ? 'Programmée' : n.statut === 'envoi' ? 'Envoi en cours' : 'Envoyée' %></span></td>
         <td class="discret" title="<%= n.modifie_le %> UTC"><%= n.quand %></td>
         <td class="actions">
           <a href="/n/<%= n.id_public %>" target="_blank">Aperçu</a>

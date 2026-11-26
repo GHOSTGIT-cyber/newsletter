@@ -330,3 +330,23 @@ body.editeur { background: var(--gris-clair); }
   .barre-editeur { flex-wrap: wrap; height: auto; padding: 8px 16px; }
   .barre-editeur .renommer input { width: 180px; }
 }
+
+/* ── Envoi programmé ─────────────────────────────────────────────────── */
+.choix-envoi { display: flex; flex-direction: column; gap: 8px; margin: 18px 0 14px; }
+.choix-envoi .option { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; color: var(--encre); font-size: 14px; }
+.choix-envoi .option:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(28,196,191,.18); }
+.choix-envoi .option input { margin-top: 2px; }
+.choix-envoi .option .fort { display: block; }
+.choix-envoi .option .discret { display: block; font-size: 13px; margin-top: 2px; }
+#bloc-date { margin: 0 0 16px; padding: 14px; background: var(--fond); border-radius: 6px; }
+#bloc-date[hidden] { display: none; }
+#bloc-date label { color: var(--encre); font-size: 14px; }
+#bloc-date input { max-width: 260px; }
+#rappel-date { font-size: 13px; margin: 8px 0 0; }
+.programmee { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  background: #fff4d6; border-left: 4px solid #e0a800; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; }
+.programmee .etiquette { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #8a6d00; font-weight: 700; }
+.programmee .quand { display: block; font-size: 17px; font-weight: 600; color: #6b5300; }
+.programmee .discret { display: block; font-size: 13px; }
+.programmee form { margin: 0; }
+.statut-programmee { background: #fff4d6; color: #8a6d00; }
