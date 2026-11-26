@@ -207,12 +207,12 @@ function palette(fondHex) {
   const turquoise = fondHex.toLowerCase() === TURQUOISE;
   return {
     titre: s ? "#ffffff" : "#111111",
-    corps: s ? "rgba(255,255,255,0.72)" : turquoise ? "#0b3b39" : "#4a4a4a",
-    discret: s ? "rgba(255,255,255,0.5)" : turquoise ? "#0b3b39" : "#8a8a8a",
+    corps: s ? "#dcdcdc" : turquoise ? "#0b3b39" : "#4a4a4a",
+    discret: s ? "#c4c4c4" : turquoise ? "#0b3b39" : "#8a8a8a",
     accent: s ? TURQUOISE : turquoise ? "#000000" : TURQUOISE,
     lien: s ? TURQUOISE : "#111111",
     carte: s ? "#1f1f1f" : fondHex.toLowerCase() === "#f2f2f2" ? "#ffffff" : turquoise ? "#ffffff" : "#f2f2f2",
-    trait: s ? "rgba(255,255,255,0.16)" : "#dddddd",
+    trait: s ? "#2e2e2e" : "#dddddd",
   };
 }
 
@@ -566,7 +566,7 @@ const ENTETE = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "
 
 const PIED = `
   <tr>
-    <td align="center" class="px" style="background-color:#000000; padding:36px 44px 40px 44px; border-top:1px solid rgba(255,255,255,0.08);">
+    <td align="center" class="px" style="background-color:#000000; padding:36px 44px 40px 44px; border-top:1px solid #1f1f1f;">
       <img src="{{logo_lift}}" width="100" alt="Lift Foils France" style="width:100px; height:auto; margin:0 auto 20px auto;" />
 
       <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 22px auto;">
@@ -575,21 +575,21 @@ const PIED = `
         </tr>
       </table>
 
-      <p style="margin:0 0 14px 0; font-family:'Assistant',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; color:rgba(255,255,255,0.4);">
+      <p style="margin:0 0 14px 0; font-family:'Assistant',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; color:#bdbdbd;">
         Une question ? Répondez simplement à cet email, on lit tout.
       </p>
 
-      <p style="margin:0 0 14px 0; font-family:'Assistant',Arial,Helvetica,sans-serif; font-size:12px; line-height:19px; color:rgba(255,255,255,0.32);">
+      <p style="margin:0 0 14px 0; font-family:'Assistant',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px; color:#c2c2c2;">
         Vous recevez cet email parce que vous vous êtes inscrit sur liftfoils.fr.<br />
         Lift Foils France &nbsp;·&nbsp; SAV et stock à Cannes &nbsp;·&nbsp; 06 35 30 50 67<br />{{adresse_postale}}
       </p>
 
       <p style="margin:0; font-family:'Assistant',Arial,Helvetica,sans-serif; font-size:13px; line-height:21px;">
-        <a href="{{preview_url}}" target="_blank" style="color:rgba(255,255,255,0.45); text-decoration:underline;">Voir en ligne</a>
-        <span style="color:rgba(255,255,255,0.25);">&nbsp;&nbsp;·&nbsp;&nbsp;</span>
+        <a href="{{preview_url}}" target="_blank" style="color:#d6d6d6; text-decoration:underline;">Voir en ligne</a>
+        <span style="color:#6b6b6b;">&nbsp;&nbsp;·&nbsp;&nbsp;</span>
         <a href="{{unsubscribe_url}}" target="_blank" style="color:#1cc4bf; text-decoration:underline;">Se désabonner</a>
-        <span style="color:rgba(255,255,255,0.25);">&nbsp;&nbsp;·&nbsp;&nbsp;</span>
-        <a href="https://liftfoils.fr/" target="_blank" style="color:rgba(255,255,255,0.45);">liftfoils.fr</a>
+        <span style="color:#6b6b6b;">&nbsp;&nbsp;·&nbsp;&nbsp;</span>
+        <a href="https://liftfoils.fr/" target="_blank" style="color:#d6d6d6;">liftfoils.fr</a>
       </p>
     </td>
   </tr>
