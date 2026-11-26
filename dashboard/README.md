@@ -1,11 +1,19 @@
 # Dashboard newsletter — Lift Foils France
 
-Outil d'administration des newsletters : édition du texte directement dans
-l'aperçu, contacts, envoi via Resend, désabonnement en un clic.
+Outil d'administration des newsletters : composition bloc par bloc ou édition
+d'un gabarit, contacts, envoi via Resend, désabonnement en un clic.
 
-État : **étape 4 — l'envoi fonctionne**. Éditeur, contacts, désabonnement en
-un clic, envoi à la liste et journal sont en place. Reste à activer le webhook
-Resend une fois l'URL publique stable (voir `PLAN.md`).
+En production : **https://newsletter.liftfoils.fr** (Coolify
+`coolify.liftfoils.fr`, application `newsletter-dashboard`, uuid
+`jvzmgqgef89u9ye3ybfbylb2`). Chaque push sur `main` redéploie tout seul.
+
+Deux façons de créer une newsletter :
+
+- **Mise en page libre** — on empile des blocs (bannière, titre, texte, image,
+  bouton, produit, colonnes, code promo, séparateur, espace), depuis une page
+  blanche ou un modèle. C'est la voie normale depuis novembre 2026.
+- **Les cinq gabarits** — les maquettes d'origine, dont seuls les textes et
+  les images sont modifiables.
 
 ## Lancer en local
 
@@ -25,12 +33,41 @@ premier démarrage dans `data/newsletter.sqlite`, les comptes de
 src/server.js        point d'entrée Express
 src/db.js            SQLite : ouverture, schéma, migrations, réglages
 src/auth.js          comptes (scrypt), sessions par cookie, CSRF, anti-force brute
-src/gabarits.js      le moteur : extraction du contenu, rendu (éditeur / aperçu / email)
-src/routes/          une route par domaine : auth, newsletters, reglages, medias, public
-src/views/           EJS, sobres
-src/public/          app.css · editeur.js (page parente) · cadre.js (dans l'iframe)
+src/gabarits.js      moteur des gabarits : extraction, rendu (éditeur / aperçu / email)
+src/blocs.js         moteur de la mise en page libre : schéma des blocs, validation, rendu
+src/envoi.js         file d'envoi, plafond quotidien, envoi différé, boucle Resend
+src/routes/          une route par domaine : auth, newsletters, reglages, medias, public, envoi, contacts
+src/views/           EJS, sobres ; editeur.ejs (gabarits) et editeur-libre.ejs (blocs)
+src/public/          app.css · editeur.js + cadre.js (gabarits) · blocs-editeur.js + cadre-libre.js (blocs)
+src/public/icones/   logo Lift blanc et icônes du pied de page, en PNG
 gabarits/            les maquettes marquées + catalogue.json
 ```
+
+## La mise en page libre
+
+`src/blocs.js` décrit chaque type de bloc une seule fois : l'éditeur construit
+ses formulaires à partir de cette description, le serveur s'en sert pour
+valider ce qu'il reçoit, et le rendu produit le HTML email (tableaux, même
+charte et mêmes précautions Outlook que les maquettes).
+
+Le contenu d'une newsletter libre est
+`{ meta: { objet, preheader }, blocs: [ { id, type, …champs } ] }`.
+
+À savoir avant d'y toucher :
+
+- **Tout est échappé.** Seules deux marques sont interprétées dans les
+  textes : `**gras**` et `[libellé](https://…)`.
+- **Pas de `rgba()` dans le HTML des emails.** Outlook l'ignore et le texte
+  retombe en noir sur fond noir : utiliser des couleurs hexadécimales opaques.
+- **Pas de WebP ni de SVG** dans les images d'un email : Outlook ne les
+  affiche pas. JPEG, PNG ou GIF.
+- **Les liens `mailto:` sont entourés de `<!--email_off-->`** (`protegerMailto`)
+  car Cloudflare, devant le dashboard, les remplacerait sinon par un lien
+  `/cdn-cgi/l/email-protection` mort hors navigateur.
+- Une adresse email tapée sans `mailto:` est comprise comme un lien mail.
+- Les images téléversées vont dans `<dossier de DB_PATH>/medias`, servies
+  publiquement sous `/m/` : elles doivent rester accessibles aussi longtemps
+  que les emails envoyés existent.
 
 ## Les gabarits
 
@@ -68,16 +105,23 @@ node --no-warnings=ExperimentalWarning -e "import('./src/gabarits.js').then(m =>
 | `COMPTES_INITIAUX` | `email:motdepasse,email:motdepasse`, lu si aucun compte n'existe |
 | `RESEND_API_KEY` | clé API Resend — sans elle, les envois restent en attente |
 | `MAIL_FROM` | expéditeur, ex. `Lift Foils France <news@news.liftfoils.fr>` |
-| `DAILY_LIMIT` | plafond quotidien, 90 par défaut (plan gratuit Resend : 100) |
+| `DAILY_LIMIT` | plafond quotidien **de départ** seulement : la valeur utilisée se règle dans la page d'envoi et vit en base (`reglages.plafond_quotidien`) |
 | `RESEND_WEBHOOK_SECRET` | signature du webhook rebonds / plaintes |
 | `SANS_CONNEXION` | `1` supprime la page de connexion. **Développement local uniquement** : la base contient des données personnelles |
 
 ## L'envoi
 
 - Un email par destinataire : personne ne voit l'adresse des autres.
-- Plafond quotidien (`DAILY_LIMIT`, 90 par défaut) commun à toutes les
-  newsletters. Au-delà, le reste part le lendemain tout seul — une boucle
-  reprend la file toutes les minutes, y compris après un redémarrage.
+- **Vagues** : le nombre d'emails par jour se choisit sur la page d'envoi, et
+  reste mémorisé pour les campagnes suivantes. Au-delà, le reste part le
+  lendemain tout seul — une boucle reprend la file toutes les minutes, y
+  compris après un redémarrage. Le plafond est commun à toutes les campagnes.
+- **Envoi programmé** : la page d'envoi propose « maintenant » ou une date et
+  une heure (heure de Paris, convertie en UTC). La newsletter passe alors au
+  statut `programmee`, la file est constituée mais rien ne part avant l'heure.
+  « Annuler l'envoi programmé » vide la file et rend la newsletter modifiable,
+  tant qu'aucun email n'est parti.
+- Compter environ **0,6 s par email** : 1 300 envois prennent un quart d'heure.
 - Chaque email porte `List-Unsubscribe` et `List-Unsubscribe-Post`, plus une
   version texte générée depuis le contenu.
 - Juste avant d'envoyer, le statut du contact est revérifié : quelqu'un qui
@@ -95,6 +139,25 @@ doit encore pouvoir désabonner dans deux ans. D'où l'importance des sauvegarde
 Un contact désabonné, en rebond ou en plainte n'est **jamais** réactivé par un
 import ultérieur. C'est la règle la plus importante du dashboard.
 
+## Avant un envoi de masse
+
+Vérifications qui ont déjà servi, dans l'ordre :
+
+1. **Plan Resend.** Le plan gratuit plafonne à 100 emails par jour (remis à
+   zéro à minuit UTC) et 3 000 par mois ; au-delà les envois échouent et ne
+   sont pas repris. Le plan Pro (20 $/mois) lève la limite quotidienne.
+2. **Réputation du domaine.** `news.liftfoils.fr` n'a presque rien envoyé :
+   monter d'un coup à plus de mille emails est le profil qui alerte les
+   filtres. D'où les vagues.
+3. **Adresse postale** renseignée dans Réglages : elle est obligatoire dans le
+   pied de page et s'affiche telle quelle.
+4. **Aucun texte entre crochets** oublié dans le contenu (`[prix promo]`…).
+5. **Images** : toutes en JPEG, PNG ou GIF, toutes en HTTP 200, toutes avec
+   une description.
+6. **Test réel** reçu sur une vraie boîte, lu sur téléphone et sur ordinateur,
+   liens cliqués depuis la boîte — l'aperçu de l'éditeur ne déclenche pas les
+   liens.
+
 ## Sauvegarde et restauration
 
 - **Sauvegarde** : Réglages → « Télécharger une sauvegarde » (copie cohérente
@@ -106,31 +169,32 @@ import ultérieur. C'est la règle la plus importante du dashboard.
 
 ## Déploiement sur Coolify
 
-L'application se déploie depuis le dépôt GitHub `GHOSTGIT-cyber/newsletter`,
-répertoire de base `/dashboard`, build pack **Dockerfile**, comme les autres
-applications de l'instance.
+**Déjà en place** : instance `coolify.liftfoils.fr`, application
+`newsletter-dashboard` (uuid `jvzmgqgef89u9ye3ybfbylb2`) sur
+`https://newsletter.liftfoils.fr`. Chaque push sur `main` redéploie ; sinon le
+bouton **Redeploy**. La base sur `/data` est conservée.
 
-1. **Supprimer l'application `newsletter-preview`** (Dockerfile inline) qui
-   occupe encore `newsletter.bakabi.fr` — le dashboard sert lui-même les aperçus.
-2. **+ New Resource → Public Repository** → `https://github.com/GHOSTGIT-cyber/newsletter`,
+Pour refaire l'installation depuis zéro : dépôt GitHub
+`GHOSTGIT-cyber/newsletter`, répertoire de base `/dashboard`, build pack
+**Dockerfile**, port `3000`.
+
+1. **+ New Resource → Public Repository** → `https://github.com/GHOSTGIT-cyber/newsletter`,
    branche `main`, base directory `/dashboard`, build pack `Dockerfile`, port `3000`.
-3. **Domaine** : `https://newsletter.bakabi.fr` (wildcard Cloudflare, rien à
-   créer). Plus tard `newsletter.liftfoils.fr` : un CNAME chez la cliente, et
-   changer `PUBLIC_URL`.
-4. **Storage → Add volume** : nom `newsletter-data`, destination `/data`.
-   Sans ce volume, la base disparaît à chaque redéploiement.
-5. **Environment variables** :
+2. **Domaine** : `https://newsletter.liftfoils.fr`, et `PUBLIC_URL` à la même
+   valeur. Cette URL se retrouve dans les liens de désabonnement des emails
+   déjà envoyés : en changer casse ces liens.
+3. **Storage → Add volume** : nom `newsletter-data`, destination `/data`.
+   Sans ce volume, la base disparaît à chaque redéploiement — avec elle les
+   contacts et les jetons de désabonnement.
+4. **Environment variables** :
    ```
-   PUBLIC_URL=https://newsletter.bakabi.fr
+   PUBLIC_URL=https://newsletter.liftfoils.fr
    COMPTES_INITIAUX=toi@…:motdepasse,anna@…:motdepasse
    ```
    `COMPTES_INITIAUX` n'est lu qu'au tout premier démarrage (table vide) ; le
    retirer ensuite. Les mots de passe se changent dans Réglages.
    Ne **jamais** poser `SANS_CONNEXION` en production.
-6. **Deploy**. Première connexion sur `/connexion`.
-
-Redéploiement : chaque push sur `main` (webhook GitHub → Coolify) ou le bouton
-Redeploy. La base sur `/data` est conservée.
+5. **Deploy**. Première connexion sur `/connexion`.
 
 En local sans Coolify :
 
@@ -138,3 +202,17 @@ En local sans Coolify :
 docker build -t newsletter-dashboard .
 docker run -p 3000:3000 -v newsletter-data:/data --env-file .env newsletter-dashboard
 ```
+
+## Points ouverts
+
+- **`SANS_CONNEXION=1` est encore posé en production** alors que la base
+  contient 1 300 contacts réels : le dashboard s'ouvre sans mot de passe pour
+  qui a l'URL. Retirer la variable dans Coolify pour activer la connexion ;
+  les comptes de `COMPTES_INITIAUX` sont déjà créés.
+- **Statistiques d'ouverture et de clics** : demandées par la cliente, pas
+  encore faites. Il faut activer le suivi côté Resend puis traiter les
+  événements `email.opened` et `email.clicked` dans le webhook, qui ne gère
+  aujourd'hui que `delivered`, `bounced` et `complained`.
+- **Réactivation d'un contact** désabonné, en rebond ou en plainte :
+  impossible autrement qu'en le supprimant puis en le réajoutant, ce qui
+  change son jeton. C'est volontaire, mais la question reviendra.
