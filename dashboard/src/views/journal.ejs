@@ -33,12 +33,23 @@
     <span class="compteur"><span class="n" data-p="echec"><%= p.echec %></span> en échec</span>
   </div>
 
+  <% if (p.envoye + p.livre > 0) { %>
+  <h2>Ce que les destinataires en ont fait</h2>
+  <div class="compteurs">
+    <span class="compteur fort-compteur"><span class="n" data-p="tauxOuverture"><%= p.tauxOuverture %></span>% d'ouverture
+      <span class="detail discret"><span data-p="ouverts"><%= p.ouverts %></span> sur <span data-p="partis"><%= p.envoye + p.livre %></span> emails partis</span></span>
+    <span class="compteur"><span class="n" data-p="cliques"><%= p.cliques %></span> clic<%= p.cliques > 1 ? 's' : '' %>
+      <span class="detail discret"><%= p.cliques > 0 ? p.tauxClic + '% des emails partis' : 'suivi des clics désactivé pour cette campagne' %></span></span>
+  </div>
+  <p class="discret note-stats">Une ouverture n'est comptée que si le lecteur affiche les images. Le vrai nombre est donc toujours un peu plus élevé — c'est vrai de tous les outils, Mailchimp compris.</p>
+  <% } %>
+
   <% if (n.statut === 'envoi') { %>
   <p class="bandeau-info" id="encours">Envoi en cours… <%= p.faits %> / <%= p.total %>. Le reste part automatiquement, y compris demain si le plafond du jour est atteint. Vous pouvez fermer cette page.</p>
   <% } %>
 
   <table class="tableau">
-    <thead><tr><th>Email</th><th>Nom</th><th>Envoi</th><th>Statut du contact</th><th>Date</th></tr></thead>
+    <thead><tr><th>Email</th><th>Nom</th><th>Envoi</th><th>Statut du contact</th><th>Date</th><th>Lecture</th></tr></thead>
     <tbody>
     <% for (const e of envois) { %>
       <tr>
@@ -51,6 +62,7 @@
         </td>
         <td><% if (e.statut_contact) { %><span class="discret"><%= STATUTS[e.statut_contact] %></span><% } else { %><span class="discret">supprimé</span><% } %></td>
         <td class="discret"><%= (e.envoye_le || '').slice(0, 16).replace('T',' ') %></td>
+        <td class="discret"><%= e.ouvert_le ? 'ouvert' : '' %><%= e.clique_le ? ' · a cliqué' : '' %></td>
       </tr>
     <% } %>
     </tbody>

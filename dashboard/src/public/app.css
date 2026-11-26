@@ -364,3 +364,6 @@ body.editeur { background: var(--gris-clair); }
 .vagues label { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0; font-size: 15px; color: var(--encre); }
 .vagues input { width: 110px; margin: 0; font-size: 16px; padding: 8px 10px; text-align: right; }
 .vagues .discret { margin: 8px 0 0; font-size: 13px; }
+.compteur .detail { display: block; font-size: 12px; margin-top: 2px; }
+.compteur.fort-compteur { border-color: var(--accent); }
+.note-stats { font-size: 13px; margin: -10px 0 22px; max-width: 760px; }

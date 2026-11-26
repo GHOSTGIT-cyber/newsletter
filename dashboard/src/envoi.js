@@ -167,6 +167,19 @@ export function progression(newsletterId) {
   p.faits = p.envoye + p.livre + p.echec;
   p.reste = p.attente;
   p.budget = budgetDuJour();
+
+  const stats = db
+    .prepare(
+      `SELECT COUNT(ouvert_le) AS ouverts, COUNT(clique_le) AS cliques
+       FROM envois WHERE newsletter_id = ? AND statut IN ('envoye','livre')`
+    )
+    .get(newsletterId);
+  p.ouverts = stats.ouverts;
+  p.cliques = stats.cliques;
+  // Taux rapportés aux emails réellement partis, pas à la liste entière.
+  const partis = p.envoye + p.livre;
+  p.tauxOuverture = partis ? Math.round((p.ouverts / partis) * 100) : 0;
+  p.tauxClic = partis ? Math.round((p.cliques / partis) * 100) : 0;
   return p;
 }
 

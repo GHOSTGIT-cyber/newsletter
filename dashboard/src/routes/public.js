@@ -110,6 +110,16 @@ r.post("/webhooks/resend", (req, res) => {
   if (evt.type === "email.delivered" && resendId) {
     db.prepare("UPDATE envois SET statut = 'livre' WHERE resend_id = ? AND statut = 'envoye'").run(resendId);
   }
+  // Ouvertures et clics : on garde le premier, pas le nombre de fois — c'est
+  // le taux d'ouverture qui intéresse, et un même email peut être rouvert.
+  if (evt.type === "email.opened" && resendId) {
+    db.prepare("UPDATE envois SET ouvert_le = COALESCE(ouvert_le, datetime('now')) WHERE resend_id = ?").run(resendId);
+  }
+  if (evt.type === "email.clicked" && resendId) {
+    db.prepare(
+      "UPDATE envois SET clique_le = COALESCE(clique_le, datetime('now')), ouvert_le = COALESCE(ouvert_le, datetime('now')) WHERE resend_id = ?"
+    ).run(resendId);
+  }
   if (evt.type === "email.bounced" && contact) {
     // Un rebond temporaire (boîte pleine) ne doit pas désabonner définitivement.
     const dur = (evt.data?.bounce?.type || "").toLowerCase() !== "transient";
