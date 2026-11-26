@@ -234,6 +234,21 @@ function formater(texte, couleurLien, { paragraphes = false, styleP = "" } = {})
     .join("\n");
 }
 
+/**
+ * Cloudflare (devant le dashboard) remplace les liens « mailto: » par un lien
+ * /cdn-cgi/l/email-protection que seul un script sait rouvrir : une protection
+ * anti-spam faite pour des pages web, pas pour des emails. Le marqueur
+ * <!--email_off--> la désactive — les maquettes d'origine s'en servent déjà
+ * autour de info@liftfoils.fr.
+ */
+export function protegerMailto(html) {
+  return html.replace(/<a\b[^>]*\bhref="mailto:[\s\S]*?<\/a>/gi, (lien, index, tout) =>
+    tout.slice(Math.max(0, index - 18), index).includes("email_off")
+      ? lien
+      : `<!--email_off-->${lien}<!--email_on-->`
+  );
+}
+
 /** Texte sans les marques de mise en forme (version texte de l'email). */
 function sansMarques(t) {
   return String(t ?? "")
@@ -637,7 +652,7 @@ export function rendreLibre(contenu, options = {}) {
     );
 
   if (mode === "cadre") html = html.replace(/<\/body>/i, () => '<script src="/static/cadre-libre.js"></script>\n</body>');
-  return html;
+  return protegerMailto(html);
 }
 
 /** Version texte de l'email, dans l'ordre des blocs. */

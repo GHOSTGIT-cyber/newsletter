@@ -19,7 +19,7 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { rendreLibre, texteLibre, contenuModele, URL_LOGO } from "./blocs.js";
+import { rendreLibre, texteLibre, contenuModele, protegerMailto, URL_LOGO } from "./blocs.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIR = resolve(__dirname, "../gabarits");
@@ -229,7 +229,7 @@ export function rendre(g, contenu, options = {}) {
     html = html.replace(/\s+data-edit(?:-\w+)?(?:="[^"]*")?/g, "");
   }
 
-  return html;
+  return protegerMailto(html);
 }
 
 /** Version texte de l'email, dans l'ordre de lecture. */
