@@ -40,7 +40,7 @@
   <div class="puces-listes">
     <a href="/contacts" class="puce <%= listeFiltre ? '' : 'actif' %>">Toutes</a>
     <% for (const l of listes) { %>
-      <a href="/contacts?liste=<%= encodeURIComponent(l.liste) %>" class="puce <%= listeFiltre === l.liste ? 'actif' : '' %>"><%= l.dernier_envoi ? '✗ ' : '' %><%= l.liste %> <span class="n"><%= l.actifs %> actifs<%= l.dernier_envoi ? ' · envoyée le ' + new Date(l.dernier_envoi.replace(' ', 'T') + 'Z').toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' }) + (l.derniere_newsletter ? ' (' + l.derniere_newsletter + ')' : '') : ' · jamais envoyée' %></span></a>
+      <a href="/contacts?liste=<%= encodeURIComponent(l.liste) %>" class="puce <%= listeFiltre === l.liste ? 'actif' : '' %>"><%= l.complete ? '✗ ' : '' %><%= l.liste %> <span class="n"><%= l.actifs %> actifs · <%= !l.dernier_envoi ? 'jamais envoyée' : (l.complete ? 'envoyée' : 'en partie (' + l.recus + '/' + l.actifs + ')') + ' le ' + new Date(l.dernier_envoi.replace(' ', 'T') + 'Z').toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' }) + ' — ' + l.derniere_newsletter %></span></a>
       <% if (listeFiltre === l.liste) { %>
       <form method="post" action="/contacts/listes/retirer" class="retirer-liste"
             onsubmit="return confirm('Retirer l'étiquette « <%= l.liste %> » ? Les contacts sont conservés, ils ne seront simplement plus rangés dans cette liste.')">

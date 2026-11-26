@@ -84,21 +84,24 @@ export function lireListe(contenu) {
  */
 /** Les listes existantes, avec le nombre de contacts actifs de chacune. */
 export function listes() {
-  return db
+  const base = db
     .prepare(
-      `SELECT c.liste, COUNT(DISTINCT c.id) AS total,
-              COUNT(DISTINCT CASE WHEN c.statut = 'actif' THEN c.id END) AS actifs,
-              MAX(e.envoye_le) AS dernier_envoi,
-              (SELECT n.nom FROM envois e2 JOIN contacts c2 ON c2.id = e2.contact_id
-                 JOIN newsletters n ON n.id = e2.newsletter_id
-               WHERE c2.liste = c.liste AND e2.statut IN ('envoye','livre')
-               ORDER BY e2.envoye_le DESC LIMIT 1) AS derniere_newsletter
-       FROM contacts c
-       LEFT JOIN envois e ON e.contact_id = c.id AND e.statut IN ('envoye','livre')
-       WHERE c.liste IS NOT NULL AND c.liste <> ''
-       GROUP BY c.liste ORDER BY c.liste`
+      `SELECT liste, COUNT(*) AS total, SUM(statut = 'actif') AS actifs
+       FROM contacts WHERE liste IS NOT NULL AND liste <> '' GROUP BY liste ORDER BY liste`
     )
     .all();
+  // Dernière newsletter partie vers cette liste, et combien de ses contacts
+  // l'ont reçue : une liste n'est « envoyée » que si elle l'a reçue en entier.
+  const derniere = db.prepare(
+    `SELECT n.id, n.nom, MAX(e.envoye_le) AS quand, COUNT(DISTINCT e.contact_id) AS recus
+     FROM envois e JOIN contacts c ON c.id = e.contact_id JOIN newsletters n ON n.id = e.newsletter_id
+     WHERE c.liste = ? AND e.statut IN ('envoye','livre')
+     GROUP BY n.id ORDER BY quand DESC LIMIT 1`
+  );
+  return base.map((l) => {
+    const d = derniere.get(l.liste);
+    return { ...l, derniere_newsletter: d?.nom || null, dernier_envoi: d?.quand || null, recus: d?.recus || 0, complete: !!d && d.recus >= l.actifs };
+  });
 }
 
 /** Range des adresses dans une liste. Les adresses inconnues sont ignorées. */
