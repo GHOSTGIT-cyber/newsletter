@@ -5,7 +5,7 @@
 import { Router } from "express";
 import { db, reglage, definirReglage } from "../db.js";
 import { nomGabarit } from "../gabarits.js";
-import { STATUTS, compteParStatut, parEmail } from "../contacts.js";
+import { STATUTS, compteParStatut, parEmail, listes } from "../contacts.js";
 import { envoyerTest, preparerCampagne, progression, tick, budgetDuJour, plafondQuotidien, configure, annulerProgrammation } from "../envoi.js";
 
 const r = Router();
@@ -86,8 +86,14 @@ r.get("/newsletters/:id/envoyer", (req, res) => {
   if (!n) return res.status(404).render("erreur", { code: 404, message: "Newsletter introuvable." });
   const comptes = compteParStatut();
   const budget = budgetDuJour();
+  const lesListes = listes();
+  const choisie = String(req.query.liste || "");
+  const destinataires = choisie ? (lesListes.find((l) => l.liste === choisie)?.actifs ?? 0) : comptes.actif;
   res.render("envoyer", {
     n,
+    listes: lesListes,
+    listeChoisie: choisie,
+    destinataires,
     objet: JSON.parse(n.contenu).meta?.objet || "",
     comptes,
     budget,
@@ -110,8 +116,12 @@ r.post("/newsletters/:id/envoyer", (req, res) => {
     return res.redirect(`/newsletters/${n.id}/journal`);
   }
   const comptes = compteParStatut();
+  const nomListe = String(req.body.liste || "").trim() || null;
+  const attendus = nomListe
+    ? (listes().find((l) => l.liste === nomListe)?.actifs ?? 0)
+    : comptes.actif;
   // Garde-fou : la confirmation doit porter le nombre de destinataires affiché.
-  if (Number(req.body.confirmation) !== comptes.actif || comptes.actif === 0) {
+  if (Number(req.body.confirmation) !== attendus || attendus === 0) {
     return res.redirect(
       `/newsletters/${n.id}/envoyer?e=` +
         encodeURIComponent("Le nombre de destinataires a changé depuis l'affichage. Vérifiez et recommencez.")
@@ -139,7 +149,7 @@ r.post("/newsletters/:id/envoyer", (req, res) => {
     prevu = pourBase(d);
   }
 
-  preparerCampagne(n.id, prevu);
+  preparerCampagne(n.id, prevu, nomListe);
   if (!prevu) tick().catch((e) => console.error("envoi :", e));
   res.redirect(`/newsletters/${n.id}/journal`);
 });

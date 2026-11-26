@@ -367,3 +367,9 @@ body.editeur { background: var(--gris-clair); }
 .compteur .detail { display: block; font-size: 12px; margin-top: 2px; }
 .compteur.fort-compteur { border-color: var(--accent); }
 .note-stats { font-size: 13px; margin: -10px 0 22px; max-width: 760px; }
+.choix-liste { display: flex; flex-wrap: wrap; gap: 8px; }
+.choix-liste .puce { display: inline-flex; align-items: baseline; gap: 7px; text-decoration: none; font-size: 14px;
+  padding: 9px 14px; border: 1px solid #ccc; border-radius: 20px; color: var(--encre); }
+.choix-liste .puce:hover { border-color: #999; }
+.choix-liste .puce.actif { background: var(--encre); border-color: var(--encre); color: var(--blanc); font-weight: 600; }
+.choix-liste .puce .n { font-size: 12px; opacity: .75; }

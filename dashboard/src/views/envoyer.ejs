@@ -4,17 +4,29 @@
   <h1>Envoyer « <%= n.nom %> »</h1>
   <% if (erreur) { %><p class="alerte"><%= erreur %></p><% } %>
 
+  <% if (listes.length) { %>
+  <section class="carte">
+    <h2>À qui l'envoyer</h2>
+    <div class="choix-liste">
+      <a href="?liste=" class="puce <%= listeChoisie ? '' : 'actif' %>">Tout le monde <span class="n"><%= comptes.actif %></span></a>
+      <% for (const l of listes) { %>
+        <a href="?liste=<%= encodeURIComponent(l.liste) %>" class="puce <%= listeChoisie === l.liste ? 'actif' : '' %>"><%= l.liste %> <span class="n"><%= l.actifs %></span></a>
+      <% } %>
+    </div>
+  </section>
+  <% } %>
+
   <section class="carte">
     <h2>Ce qui va partir</h2>
     <dl class="recap">
       <dt>Objet</dt><dd class="fort"><%= objet %></dd>
-      <dt>Destinataires</dt><dd class="fort"><%= comptes.actif %> contact<%= comptes.actif > 1 ? 's' : '' %> actif<%= comptes.actif > 1 ? 's' : '' %></dd>
+      <dt>Destinataires</dt><dd class="fort"><%= destinataires %> contact<%= destinataires > 1 ? 's' : '' %> actif<%= destinataires > 1 ? 's' : '' %><%= listeChoisie ? ' de la liste « ' + listeChoisie + ' »' : '' %></dd>
       <dt>Exclus</dt><dd class="discret"><%= comptes.desabonne %> désabonné(s), <%= comptes.rebond %> rebond(s), <%= comptes.plainte %> plainte(s)</dd>
       <dt>Aujourd'hui</dt><dd>
-        <% if (comptes.actif <= budget) { %>
-          les <%= comptes.actif %> partent aujourd'hui
+        <% if (destinataires <= budget) { %>
+          les <%= destinataires %> partent aujourd'hui
         <% } else { %>
-          <%= budget %> aujourd'hui, les <%= comptes.actif - budget %> restants demain
+          <%= budget %> aujourd'hui, les <%= destinataires - budget %> restants demain
           <span class="discret">(plafond de <%= plafond %>/jour)</span>
         <% } %>
       </dd>
@@ -23,7 +35,7 @@
 
   <% const bloquants = [];
      if (!configure) bloquants.push("La clé Resend n'est pas configurée sur le serveur.");
-     if (comptes.actif === 0) bloquants.push("Aucun contact actif : importez une liste dans Contacts.");
+     if (destinataires === 0) bloquants.push(listeChoisie ? "Aucun contact actif dans la liste « " + listeChoisie + " »." : "Aucun contact actif : importez une liste dans Contacts.");
      if (!adressePostale) bloquants.push("L'adresse postale n'est pas renseignée dans Réglages — elle est obligatoire dans le pied de page.");
   %>
 
@@ -43,7 +55,8 @@
         <li>Une fois partie, la newsletter passe en lecture seule et ne peut plus être corrigée.</li>
       </ul>
       <form method="post" action="/newsletters/<%= n.id %>/envoyer" id="formulaire-envoi">
-        <input type="hidden" name="confirmation" value="<%= comptes.actif %>">
+        <input type="hidden" name="confirmation" value="<%= destinataires %>">
+        <input type="hidden" name="liste" value="<%= listeChoisie %>">
         <input type="hidden" name="quand_utc" id="quand_utc">
 
         <div class="vagues">
@@ -81,7 +94,7 @@
           <p class="discret">Heure française. Vous pourrez annuler tant que rien n'est parti.</p>
         </div>
 
-        <button type="submit" class="principal grand" id="bouton-envoi">Envoyer à <%= comptes.actif %> destinataire<%= comptes.actif > 1 ? 's' : '' %></button>
+        <button type="submit" class="principal grand" id="bouton-envoi">Envoyer à <%= destinataires %> destinataire<%= destinataires > 1 ? 's' : '' %></button>
       </form>
 
       <script>
@@ -95,7 +108,7 @@
           const bouton = document.getElementById("bouton-envoi");
           const vague = document.getElementById("vague");
           const recapVagues = document.getElementById("recap-vagues");
-          const nb = <%= comptes.actif %>;
+          const nb = <%= destinataires %>;
           const mode = () => f.querySelector('input[name="mode"]:checked').value;
           const pluriel = nb > 1 ? "s" : "";
 

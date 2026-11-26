@@ -3,7 +3,7 @@
  */
 import { Router } from "express";
 import { db } from "../db.js";
-import { STATUTS, lireListe, importer, ajouter, changerStatut, compteParStatut } from "../contacts.js";
+import { STATUTS, lireListe, importer, ajouter, changerStatut, compteParStatut, listes } from "../contacts.js";
 
 const r = Router();
 
@@ -35,12 +35,19 @@ function extraireChamp(corpsBrut, frontiere, nom) {
 
 r.get("/contacts", (req, res) => {
   const filtre = String(req.query.statut || "");
-  const contacts = STATUTS[filtre]
-    ? db.prepare("SELECT * FROM contacts WHERE statut = ? ORDER BY email").all(filtre)
-    : db.prepare("SELECT * FROM contacts ORDER BY email").all();
+  const liste = String(req.query.liste || "");
+  const ou = [];
+  const args = [];
+  if (STATUTS[filtre]) { ou.push("statut = ?"); args.push(filtre); }
+  if (liste) { ou.push("liste = ?"); args.push(liste); }
+  const contacts = db
+    .prepare(`SELECT * FROM contacts ${ou.length ? "WHERE " + ou.join(" AND ") : ""} ORDER BY email`)
+    .all(...args);
   res.render("contacts", {
     contacts,
     comptes: compteParStatut(),
+    listes: listes(),
+    listeFiltre: liste,
     filtre,
     STATUTS,
     rapport: null,
@@ -62,10 +69,13 @@ r.post("/contacts/import", async (req, res) => {
   if (liste.length === 0) {
     return res.redirect("/contacts?e=" + encodeURIComponent("Aucune adresse trouvée dans ce fichier."));
   }
-  const rapport = importer(liste, { source, date });
+  const nomListe = extraireChamp(brut, m[1] || m[2], "liste") || null;
+  const rapport = importer(liste, { source, date, nomListe });
   res.render("contacts", {
     contacts: db.prepare("SELECT * FROM contacts ORDER BY email").all(),
     comptes: compteParStatut(),
+    listes: listes(),
+    listeFiltre: "",
     filtre: "",
     STATUTS,
     rapport,

@@ -35,6 +35,16 @@
     <a href="/contacts?statut=plainte" class="compteur <%= filtre === 'plainte' ? 'actif' : '' %>"><span class="n"><%= comptes.plainte %></span> plaintes</a>
   </div>
 
+  <% if (listes.length) { %>
+  <h2>Listes d'envoi</h2>
+  <div class="choix-liste">
+    <a href="/contacts" class="puce <%= listeFiltre ? '' : 'actif' %>">Toutes</a>
+    <% for (const l of listes) { %>
+      <a href="/contacts?liste=<%= encodeURIComponent(l.liste) %>" class="puce <%= listeFiltre === l.liste ? 'actif' : '' %>"><%= l.liste %> <span class="n"><%= l.actifs %> actifs</span></a>
+    <% } %>
+  </div>
+  <% } %>
+
   <div class="deux-colonnes">
     <section class="carte">
       <h2>Importer une liste</h2>
@@ -48,9 +58,13 @@
         <label>Date du consentement
           <input type="date" name="date" value="<%= new Date().toISOString().slice(0,10) %>">
         </label>
+        <label>Ranger dans la liste (facultatif)
+          <input type="text" name="liste" placeholder="ex. envoi 1" list="listes-connues" maxlength="60">
+          <datalist id="listes-connues"><% for (const l of listes) { %><option value="<%= l.liste %>"><% } %></datalist>
+        </label>
         <button type="submit" class="principal">Importer</button>
       </form>
-      <p class="discret">Une adresse par ligne, ou un CSV avec une colonne <code>email</code>. Les colonnes <code>nom</code> et <code>prenom</code> sont reprises si elles existent.</p>
+      <p class="discret">Une adresse par ligne, ou un CSV avec une colonne <code>email</code>. Les colonnes <code>nom</code>, <code>prenom</code> et <code>liste</code> sont reprises si elles existent. Une adresse déjà connue n'est jamais dupliquée : elle change simplement de liste.</p>
     </section>
 
     <section class="carte">
@@ -64,17 +78,18 @@
     </section>
   </div>
 
-  <h2>Liste<%= filtre ? ' — ' + STATUTS[filtre].toLowerCase() + 's' : '' %></h2>
+  <h2>Liste<%= filtre ? ' — ' + STATUTS[filtre].toLowerCase() + 's' : '' %><%= listeFiltre ? ' — « ' + listeFiltre + ' »' : '' %></h2>
   <% if (contacts.length === 0) { %>
     <p class="vide">Aucun contact<%= filtre ? ' dans cette catégorie' : '' %>.</p>
   <% } else { %>
   <table class="tableau">
-    <thead><tr><th>Email</th><th>Nom</th><th>Statut</th><th>Depuis</th><th>Consentement</th><th></th></tr></thead>
+    <thead><tr><th>Email</th><th>Nom</th><th>Liste</th><th>Statut</th><th>Depuis</th><th>Consentement</th><th></th></tr></thead>
     <tbody>
     <% for (const c of contacts) { %>
       <tr>
         <td class="fort"><%= c.email %></td>
         <td class="discret"><%= c.nom || '—' %></td>
+        <td class="discret"><%= c.liste || '—' %></td>
         <td><span class="statut statut-<%= c.statut %>"><%= STATUTS[c.statut] %></span>
           <% if (c.statut_origine) { %><span class="discret"> · <%= c.statut_origine %></span><% } %></td>
         <td class="discret"><%= (c.statut_date || '').slice(0, 10) %></td>

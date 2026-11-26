@@ -47,6 +47,7 @@ export function lireListe(contenu) {
   const colEmail = entete.findIndex((c) => ["email", "e-mail", "adresse email", "mail"].includes(c));
   const colNom = entete.findIndex((c) => ["nom", "name", "nom complet", "full name"].includes(c));
   const colPrenom = entete.findIndex((c) => ["prenom", "prénom", "first name", "firstname"].includes(c));
+  const colListe = entete.findIndex((c) => ["liste", "list", "groupe", "segment", "envoi"].includes(c));
   const corps = colEmail !== -1 ? lignes.slice(1) : lignes;
 
   const vus = new Set();
@@ -71,7 +72,8 @@ export function lireListe(contenu) {
       const m = ligne.match(/^\s*"?([^"<]+?)"?\s*<[^>]+>\s*$/);
       if (m) nom = m[1].trim();
     }
-    sortie.push({ email, nom });
+    const listeLigne = colListe !== -1 ? (cellules[colListe] || "").trim() : "";
+    sortie.push({ email, nom, liste: listeLigne });
   }
   return sortie;
 }
@@ -80,7 +82,36 @@ export function lireListe(contenu) {
  * Importe une liste. Les contacts déjà désabonnés sont comptés « protégés » et
  * laissés intacts ; les nouveaux arrivent en `actif`.
  */
-export function importer(liste, { source = "import", date = null } = {}) {
+/** Les listes existantes, avec le nombre de contacts actifs de chacune. */
+export function listes() {
+  return db
+    .prepare(
+      `SELECT liste, COUNT(*) AS total, SUM(statut = 'actif') AS actifs
+       FROM contacts WHERE liste IS NOT NULL AND liste <> '' GROUP BY liste ORDER BY liste`
+    )
+    .all();
+}
+
+/** Range des adresses dans une liste. Les adresses inconnues sont ignorées. */
+export function affecterListe(emails, nomListe) {
+  const nom = String(nomListe || "").trim().slice(0, 60);
+  const majListe = db.prepare("UPDATE contacts SET liste = ? WHERE email = ?");
+  let touches = 0;
+  db.exec("BEGIN");
+  try {
+    for (const e of emails) {
+      const r = majListe.run(nom || null, String(e).toLowerCase().trim());
+      touches += r.changes;
+    }
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
+  return touches;
+}
+
+export function importer(liste, { source = "import", date = null, nomListe = null } = {}) {
   const consentementDate = date || new Date().toISOString().slice(0, 10);
   const rapport = { ajoutes: 0, existants: 0, proteges: 0, invalides: 0, details: [] };
 
@@ -90,10 +121,14 @@ export function importer(liste, { source = "import", date = null } = {}) {
      VALUES (?, ?, 'actif', 'import', ?, ?, ?)`
   );
   const completerNom = db.prepare("UPDATE contacts SET nom = ? WHERE id = ? AND (nom IS NULL OR nom = '')");
+  const rangerListe = db.prepare("UPDATE contacts SET liste = ? WHERE id = ?");
+  const nom_liste = nomListe ? String(nomListe).trim().slice(0, 60) : null;
 
   db.exec("BEGIN");
   try {
-    for (const { email, nom } of liste) {
+    for (const { email, nom, liste: listeLigne } of liste) {
+      // Une colonne « liste » dans le fichier prime sur le choix global.
+      const cible = (listeLigne && String(listeLigne).trim().slice(0, 60)) || nom_liste;
       if (!emailValide(email)) {
         rapport.invalides++;
         rapport.details.push({ email, resultat: "adresse invalide" });
@@ -107,10 +142,14 @@ export function importer(liste, { source = "import", date = null } = {}) {
         } else {
           rapport.existants++;
           if (nom) completerNom.run(nom, existant.id);
+          // Un contact déjà connu change quand même de liste : c'est le but
+          // quand on réimporte un découpage en plusieurs envois.
+          if (cible) rangerListe.run(cible, existant.id);
         }
         continue;
       }
-      inserer.run(email, nom || null, consentementDate, source, nouveauJeton());
+      const info = inserer.run(email, nom || null, consentementDate, source, nouveauJeton());
+      if (cible) rangerListe.run(cible, info.lastInsertRowid);
       rapport.ajoutes++;
     }
     db.exec("COMMIT");

@@ -106,7 +106,7 @@ export const budgetDuJour = () => Math.max(0, plafondQuotidien() - envoyesAujour
  * `envoiPrevu` (instant UTC « YYYY-MM-DD HH:MM:SS ») diffère le départ : la file
  * est constituée tout de suite, mais rien ne part avant l'heure dite.
  */
-export function preparerCampagne(newsletterId, envoiPrevu = null) {
+export function preparerCampagne(newsletterId, envoiPrevu = null, nomListe = null) {
   const existants = db
     .prepare("SELECT COUNT(*) AS n FROM envois WHERE newsletter_id = ?")
     .get(newsletterId).n;
@@ -115,7 +115,10 @@ export function preparerCampagne(newsletterId, envoiPrevu = null) {
   const inserer = db.prepare(
     "INSERT INTO envois (newsletter_id, contact_id, email, statut) VALUES (?, ?, ?, 'attente')"
   );
-  const liste = db.prepare("SELECT id, email FROM contacts WHERE statut = 'actif' ORDER BY id").all();
+  // Une liste choisie restreint la campagne à ce paquet d'adresses.
+  const liste = nomListe
+    ? db.prepare("SELECT id, email FROM contacts WHERE statut = 'actif' AND liste = ? ORDER BY id").all(nomListe)
+    : db.prepare("SELECT id, email FROM contacts WHERE statut = 'actif' ORDER BY id").all();
   db.exec("BEGIN");
   try {
     for (const c of liste) inserer.run(newsletterId, c.id, c.email);

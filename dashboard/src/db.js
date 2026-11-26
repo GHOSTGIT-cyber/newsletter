@@ -81,6 +81,10 @@ const MIGRATIONS = [
   // Statistiques : premier instant d'ouverture et de clic, par destinataire.
   `ALTER TABLE envois ADD COLUMN ouvert_le TEXT;
    ALTER TABLE envois ADD COLUMN clique_le TEXT;`,
+  // Listes : un contact appartient à au plus une liste, pour envoyer par
+  // paquets choisis plutôt qu'à tout le monde. NULL = aucune liste.
+  `ALTER TABLE contacts ADD COLUMN liste TEXT;
+   CREATE INDEX contacts_liste ON contacts(liste);`,
 ];
 
 db.exec(`CREATE TABLE IF NOT EXISTS migrations (version INTEGER PRIMARY KEY, appliquee_le TEXT NOT NULL DEFAULT (datetime('now')))`);
